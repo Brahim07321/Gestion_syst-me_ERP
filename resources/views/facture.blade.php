@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Facturation - Système d'Inventaire</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .invoice-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-top: 40px;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 {
+            font-weight: 700;
+            color: #0d6efd;
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 6px;
+        }
+
+        .table thead {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        .table tbody tr:hover {
+            background-color: #e9f1ff;
+        }
+
+        .total-section p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .total-section strong {
+            font-size: 1.3rem;
+            color: #0d6efd;
+        }
+
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .btn-primary:hover {
+            background-color: #084298;
+            border-color: #084298;
+        }
+
+        .btn-danger:hover {
+            background-color: #a71d2a;
+            border-color: #a71d2a;
+        }
+
+        .delete-item i {
+            font-size: 1.1rem;
+        }
+
+        .search-input {
+            min-width: 150px;
+        }
+
+        .readonly-input {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="invoice-container">
+        <h1>Créer une Facture</h1>
+        <!-- Datalist Produits -->
+        <datalist id="products-list">
+            @foreach ($products as $product)
+                <option value="{{ $product['Referonce'] }}" data-referonce="{{ $product['Referonce'] }}"
+                    data-designation="{{ $product['Designation'] }}" data-price="{{ $product['prace_sell'] }}">
+                </option>
+            @endforeach
+        </datalist>
+        <!-- Datalist Clients -->
+        <datalist id="customers-list">
+            @foreach ($customers as $customer)
+                <option value="{{ $customer->name }}" data-id="{{ $customer->id }}">
+                </option>
+            @endforeach
+        </datalist>
+
+        <form method="POST" action="{{ route('facture.store') }}" id="invoiceForm">
+            @csrf
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="customer_search">Client</label>
+                    <input type="text" id="customer_search" name="customer_search" class="form-control"
+                        list="customers-list" placeholder="Rechercher un client..." required>
+                    <input type="hidden" name="customer_id" id="customer_id">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="invoice_date">Date Facture</label>
+                    <input type="date" name="invoice_date" id="invoice_date" class="form-control" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="due_date">Date d'échéance</label>
+                    <input type="date" name="due_date" id="due_date" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="invoice_number">Numéro Facture</label>
+                <input type="text" name="invoice_number" id="invoice_number" class="form-control"
+                    value="INV-{{ time() }}" required>
+            </div>
+
+            <h3 class="mb-3">Articles</h3>
+
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle" id="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%;">Référence</th>
+                            <th style="width: 30%;">Désignation</th>
+                            <th style="width: 15%;">Prix Unitaire (MAD)</th>
+                            <th style="width: 10%;">Quantité</th>
+                            <th style="width: 15%;">Total (MAD)</th>
+                            <th style="width: 12%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-list">
+                        <tr>
+                            <td>
+                                <input type="text" class="form-control product-search search-input"
+                                    list="products-list" placeholder="Référence..." required>
+                                <input type="hidden" name="items[0][referonce]" class="product-hidden">
+                            </td>
+                            <td>
+                                <input type="text" name="items[0][designation]"
+                                    class="form-control designation readonly-input" readonly>
+                            </td>
+                            <td>
+                                <input type="number" name="items[0][price]" class="form-control price" step="0.01"
+                                    min="0" required>
+                            </td>
+                            <td>
+                                <input type="number" name="items[0][quantity]" class="form-control quantity"
+                                    min="1" value="1" required>
+                            </td>
+                            <td>
+                                <span class="total">0.00</span> MAD
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-danger btn-sm delete-item" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn btn-primary mb-4" id="add-item">
+                <i class="fas fa-plus"></i> Ajouter Article
+            </button>
+
+            <div class="total-section text-end">
+                <p>Sous-total : <span id="subtotal">0.00</span> MAD</p>
+                <p>Taxe (20%) : <span id="tax">0.00</span> MAD</p>
+                <p><strong>Total Général : <span id="grand-total">0.00</span> MAD</strong></p>
+            </div>
+
+            <!-- 🔥 status -->
+            <div class="mb-4">
+                <label for="status">Statut de la facture</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="non payée" selected>Non payée</option>
+                    <option value="payée">Payée</option>
+                </select>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-success btn-lg px-5">
+                    Enregistrer la Facture
+                </button>
+                <button type="button" class="btn btn-info me-2" id="save-pdf">
+                    <i class="btn fas fa-file-pdf"></i> Enregistrer en PDF
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const itemsList = document.getElementById('items-list');
+            let itemIndex = 1;
+
+            function calculateTotals() {
+                let subtotal = 0;
+
+                itemsList.querySelectorAll('tr').forEach(row => {
+                    const price = parseFloat(row.querySelector('.price')?.value) || 0;
+                    const quantity = parseInt(row.querySelector('.quantity')?.value) || 0;
+                    const total = price * quantity;
+
+                    row.querySelector('.total').textContent = total.toFixed(2);
+                    subtotal += total;
+                });
+
+                const tax = subtotal * 0;
+                const grandTotal = subtotal + tax;
+
+                document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+                document.getElementById('tax').textContent = tax.toFixed(2);
+                document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+            }
+
+            function getProduct(referonce) {
+                const options = document.querySelectorAll('#products-list option');
+
+                for (let opt of options) {
+                    if (opt.value === referonce) {
+                        return {
+                            referonce: opt.dataset.referonce,
+                            designation: opt.dataset.designation,
+                            price: opt.dataset.price
+                        };
+                    }
+                }
+
+                return null;
+            }
+
+            function getClient(name) {
+                const options = document.querySelectorAll('#customers-list option');
+
+                for (let opt of options) {
+                    if (opt.value === name) {
+                        return {
+                            id: opt.dataset.id
+                        };
+                    }
+                }
+
+                return null;
+            }
+
+            // Client search
+            const customerSearch = document.getElementById('customer_search');
+            const customerId = document.getElementById('customer_id');
+
+            customerSearch.addEventListener('input', function() {
+                const client = getClient(this.value);
+
+                if (client) {
+                    customerId.value = client.id;
+                } else {
+                    customerId.value = '';
+                }
+            });
+
+            // Product search + auto-fill
+            itemsList.addEventListener('input', function(e) {
+                if (e.target.classList.contains('product-search')) {
+                    const row = e.target.closest('tr');
+                    const product = getProduct(e.target.value);
+
+                    if (product) {
+                        row.querySelector('.product-hidden').value = product.referonce;
+                        row.querySelector('.designation').value = product.designation;
+                        row.querySelector('.price').value = parseFloat(product.price).toFixed(2);
+
+                        const quantityInput = row.querySelector('.quantity');
+                        if (!quantityInput.value || parseInt(quantityInput.value) < 1) {
+                            quantityInput.value = 1;
+                        }
+                    } else {
+                        row.querySelector('.product-hidden').value = '';
+                        row.querySelector('.designation').value = '';
+                        row.querySelector('.price').value = '';
+                        row.querySelector('.total').textContent = '0.00';
+                    }
+
+                    calculateTotals();
+                }
+
+                if (
+                    e.target.classList.contains('price') ||
+                    e.target.classList.contains('quantity')
+                ) {
+                    calculateTotals();
+                }
+            });
+
+            // Add new product row
+            document.getElementById('add-item').addEventListener('click', function() {
+                const newRow = document.createElement('tr');
+
+                newRow.innerHTML = `
+                    <td>
+                        <input
+                            type="text"
+                            class="form-control product-search search-input"
+                            list="products-list"
+                            placeholder="Référence..."
+                            required
+                        >
+                        <input type="hidden" name="items[${itemIndex}][referonce]" class="product-hidden">
+                    </td>
+                    <td>
+                        <input
+                            type="text"
+                            name="items[${itemIndex}][designation]"
+                            class="form-control designation readonly-input"
+                            readonly
+                        >
+                    </td>
+                    <td>
+                        <input
+                            type="number"
+                            name="items[${itemIndex}][price]"
+                            class="form-control price"
+                            step="0.01"
+                            min="0"
+                            required
+                        >
+                    </td>
+                    <td>
+                        <input
+                            type="number"
+                            name="items[${itemIndex}][quantity]"
+                            class="form-control quantity"
+                            min="1"
+                            value="1"
+                            required
+                        >
+                    </td>
+                    <td>
+                        <span class="total">0.00</span> MAD
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm delete-item" title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+
+                itemsList.appendChild(newRow);
+                itemIndex++;
+            });
+
+            // Delete row
+            itemsList.addEventListener('click', function(e) {
+                if (e.target.closest('.delete-item')) {
+                    const rows = itemsList.querySelectorAll('tr');
+
+                    if (rows.length > 1) {
+                        e.target.closest('tr').remove();
+                    } else {
+                        const row = e.target.closest('tr');
+                        row.querySelector('.product-search').value = '';
+                        row.querySelector('.product-hidden').value = '';
+                        row.querySelector('.designation').value = '';
+                        row.querySelector('.price').value = '';
+                        row.querySelector('.quantity').value = 1;
+                        row.querySelector('.total').textContent = '0.00';
+                    }
+
+                    calculateTotals();
+                }
+            });
+
+            calculateTotals();
+        });
+        document.getElementById('save-pdf').addEventListener('click', function() {
+            const {
+                jsPDF
+            } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            const invoiceNumber = document.getElementById('invoice_number').value || 'BL-0001';
+            const invoiceDate = document.getElementById('invoice_date').value || '';
+            const customerName = document.getElementById('customer_search').value || 'Client';
+            const grandTotal = document.getElementById('grand-total').textContent || '0.00';
+
+            const logoUrl = '{{ asset('images/img.png') }}';
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = logoUrl;
+
+            img.onload = function() {
+                // =========================
+                // LOGO CENTER TOP
+                // =========================
+                const logoWidth = 85;
+                const logoHeight = 28;
+                const logoX = (pageWidth - logoWidth) / 2;
+                const logoY = 8;
+
+                doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
+
+                // line under logo
+                doc.setDrawColor(120, 120, 120);
+                doc.setLineWidth(0.3);
+                doc.line(12, 40, pageWidth - 12, 40);
+
+                // =========================
+                // HEADER INFOS
+                // =========================
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text(`BON DE LIVRAISON N° ${invoiceNumber}`, 12, 48);
+                doc.text(`BON DE COMMANDE N°`, 12, 55);
+
+                doc.text(`Marrakech, le : ${invoiceDate}`, pageWidth - 17, 44, {
+                    align: 'right'
+                });
+
+                // Client box
+                doc.rect(122, 46, 70, 20);
+                doc.text(customerName.toUpperCase(), 157, 60, {
+                    align: 'center'
+                });
+                // =========================
+                // TABLE DATA
+                // =========================
+                const rows = [];
+                document.querySelectorAll('#items-list tr').forEach(row => {
+                    const referonce = row.querySelector('.product-hidden')?.value || '';
+                    const designation = row.querySelector('.designation')?.value || '';
+                    const quantity = row.querySelector('.quantity')?.value || '1';
+                    const price = parseFloat(row.querySelector('.price')?.value || 0).toFixed(2);
+                    const total = row.querySelector('.total')?.textContent || '0.00';
+
+                    if (referonce || designation) {
+                        rows.push([
+                            referonce,
+                            designation,
+                            quantity.replace('.', ','),
+                            price.replace('.', ','),
+                            String(total).replace('.', ',')
+                        ]);
+                    }
+                });
+
+                // 🔥 عدد السطور اللي بغينا فالتابلو (باش يبان طويل)
+                const minRows = 15;
+
+                // نزيدو rows خاويين حتى يوصل للارتفاع المطلوب
+                while (rows.length < minRows) {
+                    rows.push(['', '', '', '', '']);
+                }
+
+                // =========================
+                // TABLE 80% PAGE STYLE
+                // no horizontal lines between products
+                // =========================
+                doc.autoTable({
+                    startY: 70,
+                    head: [
+                        [
+                            'Référence',
+                            'Désignation',
+                            'Quantité',
+                            'P.U Net',
+                            'Montant Net'
+                        ]
+                    ],
+                    body: rows,
+                    theme: 'plain',
+                    styles: {
+                        font: 'helvetica',
+                        fontSize: 9,
+                        textColor: [0, 0, 0],
+                        cellPadding: 2,
+                        overflow: 'linebreak',
+                        valign: 'middle',
+                        lineWidth: 0
+                    },
+                    headStyles: {
+                        fontStyle: 'bold',
+                        halign: 'center',
+                        textColor: [0, 0, 0],
+                        fillColor: false,
+                        lineWidth: 0
+                    },
+                    columnStyles: {
+                        0: {
+                            cellWidth: 28,
+                            halign: 'left'
+                        },
+                        1: {
+                            cellWidth: 80,
+                            halign: 'left'
+                        },
+                        2: {
+                            cellWidth: 22,
+                            halign: 'center'
+                        },
+                        3: {
+                            cellWidth: 24,
+                            halign: 'right'
+                        },
+                        4: {
+                            cellWidth: 26,
+                            halign: 'right'
+                        }
+                    },
+                    margin: {
+                        left: 12,
+                        right: 12
+                    },
+                    didDrawPage: function(data) {
+                        const x = data.settings.margin.left;
+                        const y = data.settings.startY;
+                        const tableWidth = 180; // حوالي 80%+ من العرض
+                        const rowHeight = 8;
+
+                        // outer border
+                        doc.setDrawColor(120, 120, 120);
+                        doc.setLineWidth(0.2);
+
+                        const bodyRowsCount = rows.length > 0 ? rows.length : 1;
+                        const totalHeight = rowHeight * (bodyRowsCount + 1);
+
+                        doc.rect(x, y, tableWidth, totalHeight);
+
+                        // vertical lines only
+                        const col1 = x + 28;
+                        const col2 = x + 108;
+                        const col3 = x + 130;
+                        const col4 = x + 154;
+
+                        doc.line(col1, y, col1, y + totalHeight);
+                        doc.line(col2, y, col2, y + totalHeight);
+                        doc.line(col3, y, col3, y + totalHeight);
+                        doc.line(col4, y, col4, y + totalHeight);
+
+                        // only header separator
+                        doc.line(x, y + rowHeight, x + tableWidth, y + rowHeight);
+                    }
+                });
+
+                // =========================
+                // TOTAL BOX
+                // =========================
+                const totalY = 200;
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+
+                doc.setFillColor(0, 102, 204);
+                doc.rect(142, totalY, 28, 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.text('TOTAL', 156, totalY + 6.5, {
+                    align: 'center'
+                });
+
+                doc.setFillColor(255, 255, 255);
+                doc.setTextColor(0, 0, 0);
+                doc.rect(170, totalY, 22, 10);
+                doc.text(String(grandTotal).replace('.', ','), 190, totalY + 6.5, {
+                    align: 'right'
+                });
+
+                // =========================        
+                //FOOTER
+                // =========================
+                let footerY = pageHeight - 24;
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.text(
+                    "LES TURBOCHARGEURS, LES PIÈCES ÉLECTRONIQUES ET HYDRAULIQUES NE SONT PAS COUVERTS PAR LA",
+                    pageWidth / 2,
+                    footerY, {
+                        align: 'center'
+                    }
+                );
+                doc.text(
+                    "GARANTIE AUCUN RETOUR OU AVOIR N'EST ACCEPTÉ",
+                    pageWidth / 2,
+                    footerY + 4, {
+                        align: 'center'
+                    }
+                );
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.text(
+                    "Siège Social : 14 Magasin 1 Lot Taisir Quartier Sidi Ghanem - Marrakech",
+                    pageWidth / 2,
+                    footerY + 10, {
+                        align: 'center'
+                    }
+                );
+                doc.text(
+                    "Tél. : 0524 33 65 14 / 06 61 28 44 87 - E-mail : italopieces2015@gmail.com",
+                    pageWidth / 2,
+                    footerY + 14, {
+                        align: 'center'
+                    }
+                );
+
+                doc.save(`facture_${invoiceNumber}.pdf`);
+            };
+
+            img.onerror = function() {
+                alert("Erreur lors du chargement du logo.");
+            };
+        });
+    </script>
+</body>
+
+</html>
