@@ -14,26 +14,26 @@
 
 <body>
     <style>
-        :root {
-            --sidebar-width: 250px;
-            --header-height: 60px;
-            /* Card Colors */
-            --card-blue: #3498db;
-            --card-green: #2ecc71;
-            --card-orange: #e67e22;
-            --card-red: #e74c3c;
-            --card-purple: #9b59b6;
-            --card-pink: #e84393;
-            /* Menu Item Colors */
-            --menu-dashboard: #3498db;
-            --menu-category: #2ecc71;
-            --menu-product: #e67e22;
-            --menu-customer: #e74c3c;
-            --menu-supplier: #9b59b6;
-            --menu-outgoing: #f39c12;
-            --menu-purchase: #1abc9c;
-            --menu-users: #34495e;
-        }
+      :root {
+    --sidebar-width: 250px;
+    --header-height: 60px;
+
+    --card-blue: #3b82f6;
+    --card-green: #10b981;
+    --card-orange: #f59e0b;
+    --card-red: #ef4444;
+    --card-purple: #8b5cf6;
+    --card-pink: #ec4899;
+
+    --menu-dashboard: #3b82f6;
+    --menu-category: #10b981;
+    --menu-product: #f59e0b;
+    --menu-customer: #ef4444;
+    --menu-supplier: #8b5cf6;
+    --menu-outgoing: #06b6d4;
+    --menu-purchase: #14b8a6;
+    --menu-users: #64748b;
+}
 
         /* Card Colors */
         .card-blue {
@@ -59,6 +59,39 @@
         .card-pink {
             background-color: var(--card-pink);
         }
+        .nav-menu li.active {
+    background: #c5bebe;
+    color: #000000;
+    font-weight: 600;
+}
+
+
+.nav-menu {
+    list-style: none;
+    
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+
+
+/* SCROLLBAR MODERN */
+.sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: #a7acb4 transparent;
+}
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #3b82f6, #6366f1);
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #60a5fa, #818cf8);
+}
     </style>
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
@@ -68,36 +101,72 @@
             </div>
             <div class="admin-info">
                 <h5>Mariv Part</h5>
-                <p><span class="badge bg-success">Getion de Stock</span></p>
             </div>
         </div>
 
         <ul class="nav-menu">
+
             <a href="/">
-                <li class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
+                <li class="{{ request()->is('/') ? 'active' : '' }}">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </li>
             </a>
+        
             <a href="/facture">
-                <li><i class="fas fa-file-invoice"></i>Facture</li>
+                <li class="{{ request()->is('facture') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice-dollar"></i> Factures
+                </li>
             </a>
-            <a href="/Category">
-                <li><i class="fas fa-tags"></i> Category</li>
-            </a>
-            <a href="/product">
-                <li><i class="fas fa-box"></i> Product</li>
-            </a>
-            <a href="/Customer">
-                <li><i class="fas fa-users"></i> Customer</li>
-            </a>
-            <a href="/stock">
-                <li><i class="fas fa-boxes"></i> Stock</li>
-            </a>
+        
             <a href="/archife">
-                <li><i class="fas fa-archive"></i> archife Factures </li>
+                <li class="{{ request()->is('archife') ? 'active' : '' }}">
+                    <i class="fas fa-folder-open"></i> Archive Factures
+                </li>
             </a>
-            <li><i class="fas fa-sign-in-alt"></i> Purchase Products</li>
-            <li><i class="fas fa-user-cog"></i> System Users</li>
-        </ul>
-    </div>
+        
+            <a href="/product">
+                <li class="{{ request()->is('product') ? 'active' : '' }}">
+                    <i class="fas fa-box-open"></i> Produits
+                </li>
+            </a>
+        
+            <a href="/Category">
+                <li class="{{ request()->is('Category') ? 'active' : '' }}">
+                    <i class="fas fa-layer-group"></i> Catégories
+                </li>
+            </a>
+        
+            <a href="/stock">
+                <li class="{{ request()->is('stock') || request()->is('stock/*') ? 'active' : '' }}">
+                    <i class="fas fa-warehouse"></i> Stock
+                </li>
+            </a>
+        
+            <a href="/purchases">
+                <li class="{{ request()->is('purchases') || request()->is('purchases') || request()->is('purchase/*') ? 'active' : '' }}">
+                    <i class="fas fa-cart-plus"></i> Achats
+                </li>
+            </a>
+        
+            <a href="/suppliers">
+                <li class="{{ request()->is('suppliers') || request()->is('suppliers/*') ? 'active' : '' }}">
+                    <i class="fas fa-truck"></i> Fournisseurs
+                </li>
+            </a>
+        
+            <a href="/Customer">
+                <li class="{{ request()->is('Customer') || request()->is('customers/*') ? 'active' : '' }}">
+                    <i class="fas fa-user-friends"></i> Clients
+                </li>
+            </a>
+        
+            <a href="#">
+                <li class="{{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}">
+                    <i class="fas fa-user-cog"></i> Utilisateurs
+                </li>
+            </a>
+        
+        </ul>    </div>
 
     <!-- Header -->
     <div class="header">

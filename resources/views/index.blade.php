@@ -134,4 +134,5 @@
             }
         }
     });
-</script>@endsection
+</script>
+@endsection

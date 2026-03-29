@@ -12,7 +12,7 @@
                 <div>
                     
                     <a href="{{ route('stock.export', request()->query()) }}" 
-                        class="btn btn-export text-white bg-black btn-sm">
+                        class="btn btn-export text-white btn-success  btn-sm">
                          <i class="fas fa-file-export"></i> Exporter
                      </a>
                 </div>
@@ -81,8 +81,8 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('stock.edit', $product->id) }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-edit"></i> Edit
+                                <a href="/product" class="btn btn-primary btn-sm">
+                                    Voir
                                 </a>
                             </td>
                         </tr>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -79,6 +80,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="invoice-container">
         <h1>Détail de la Facture</h1>
@@ -91,13 +93,14 @@
 
             <div class="col-md-3">
                 <label>Date Facture</label>
-                <input type="text" class="form-control readonly-input" value="{{ $facture->date_facture }}" readonly>
+                <input type="text" class="form-control readonly-input"
+                    value="{{ \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y') }}" readonly>
             </div>
 
             <div class="col-md-3">
                 <label>Statut</label>
                 <div class="form-control readonly-input  align-items-center">
-                    @if($facture->status === 'payée')
+                    @if ($facture->status === 'payée')
                         <span class="badge bg-success badge-status">Payée</span>
                     @else
                         <span class="badge bg-danger badge-status">Non payée</span>
@@ -108,7 +111,8 @@
 
         <div class="mb-4">
             <label>Numéro Facture</label>
-            <input type="text" id="invoice_number" class="form-control readonly-input" value="{{ $facture->code_facture }}" readonly>
+            <input type="text" id="invoice_number" class="form-control readonly-input"
+                value="{{ $facture->code_facture }}" readonly>
         </div>
 
         <h3 class="mb-3">Articles</h3>
@@ -150,7 +154,8 @@
         <div class="total-section text-end">
             <p>Sous-total : <span id="subtotal">{{ number_format($subtotal, 2, '.', '') }}</span> MAD</p>
             <p>Taxe (20%) : <span id="tax">{{ number_format($tax, 2, '.', '') }}</span> MAD</p>
-            <p><strong>Total Général : <span id="grand-total">{{ number_format($facture->total, 2, '.', '') }}</span> MAD</strong></p>
+            <p><strong>Total Général : <span id="grand-total">{{ number_format($facture->total, 2, '.', '') }}</span>
+                    MAD</strong></p>
         </div>
 
         <div class="text-center mt-4">
@@ -166,21 +171,26 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
+    @php
+        $formattedDate = \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y');
+    @endphp
     <script>
         document.getElementById('save-pdf').addEventListener('click', function() {
-            const { jsPDF } = window.jspdf;
+            const {
+                jsPDF
+            } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
 
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
 
             const invoiceNumber = document.getElementById('invoice_number').value || 'BL-0001';
-            const invoiceDate = @json($facture->date_facture);
+            const invoiceDate = @json($formattedDate);
+
             const customerName = @json($facture->client_name);
             const grandTotal = document.getElementById('grand-total').textContent || '0.00';
 
-            const logoUrl = '{{ asset("images/img.png") }}';
+            const logoUrl = '{{ asset('images/img.png') }}';
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.src = logoUrl;
@@ -213,8 +223,10 @@
 
                 const rows = [];
                 document.querySelectorAll('#items-list tr').forEach(row => {
-                    const referonce = row.querySelector('.product-reference')?.textContent?.trim() || '';
-                    const designation = row.querySelector('.product-designation')?.textContent?.trim() || '';
+                    const referonce = row.querySelector('.product-reference')?.textContent?.trim() ||
+                    '';
+                    const designation = row.querySelector('.product-designation')?.textContent
+                    ?.trim() || '';
                     const quantity = row.querySelector('.product-quantity')?.textContent?.trim() || '1';
                     const price = row.querySelector('.product-price')?.textContent?.trim() || '0.00';
                     const total = row.querySelector('.product-total')?.textContent?.trim() || '0.00';
@@ -237,13 +249,15 @@
 
                 doc.autoTable({
                     startY: 70,
-                    head: [[
-                        'Référence',
-                        'Désignation',
-                        'Quantité',
-                        'P.U Net',
-                        'Montant Net'
-                    ]],
+                    head: [
+                        [
+                            'Référence',
+                            'Désignation',
+                            'Quantité',
+                            'P.U Net',
+                            'Montant Net'
+                        ]
+                    ],
                     body: rows,
                     theme: 'plain',
                     styles: {
@@ -263,11 +277,26 @@
                         lineWidth: 0
                     },
                     columnStyles: {
-                        0: { cellWidth: 28, halign: 'left' },
-                        1: { cellWidth: 80, halign: 'left' },
-                        2: { cellWidth: 22, halign: 'center' },
-                        3: { cellWidth: 24, halign: 'right' },
-                        4: { cellWidth: 26, halign: 'right' }
+                        0: {
+                            cellWidth: 28,
+                            halign: 'left'
+                        },
+                        1: {
+                            cellWidth: 80,
+                            halign: 'left'
+                        },
+                        2: {
+                            cellWidth: 22,
+                            halign: 'center'
+                        },
+                        3: {
+                            cellWidth: 24,
+                            halign: 'right'
+                        },
+                        4: {
+                            cellWidth: 26,
+                            halign: 'right'
+                        }
                     },
                     margin: {
                         left: 12,
@@ -309,7 +338,9 @@
                 doc.setFillColor(0, 102, 204);
                 doc.rect(142, totalY, 28, 10, 'F');
                 doc.setTextColor(255, 255, 255);
-                doc.text('TOTAL', 156, totalY + 6.5, { align: 'center' });
+                doc.text('TOTAL', 156, totalY + 6.5, {
+                    align: 'center'
+                });
 
                 doc.setFillColor(255, 255, 255);
                 doc.setTextColor(0, 0, 0);
@@ -325,14 +356,16 @@
                 doc.text(
                     "LES TURBOCHARGEURS, LES PIÈCES ÉLECTRONIQUES ET HYDRAULIQUES NE SONT PAS COUVERTS PAR LA",
                     pageWidth / 2,
-                    footerY,
-                    { align: 'center' }
+                    footerY, {
+                        align: 'center'
+                    }
                 );
                 doc.text(
                     "GARANTIE AUCUN RETOUR OU AVOIR N'EST ACCEPTÉ",
                     pageWidth / 2,
-                    footerY + 4,
-                    { align: 'center' }
+                    footerY + 4, {
+                        align: 'center'
+                    }
                 );
 
                 doc.setFont('helvetica', 'normal');
@@ -340,14 +373,16 @@
                 doc.text(
                     "Siège Social : 14 Magasin 1 Lot Taisir Quartier Sidi Ghanem - Marrakech",
                     pageWidth / 2,
-                    footerY + 10,
-                    { align: 'center' }
+                    footerY + 10, {
+                        align: 'center'
+                    }
                 );
                 doc.text(
                     "Tél. : 0524 33 65 14 / 06 61 28 44 87 - E-mail : italopieces2015@gmail.com",
                     pageWidth / 2,
-                    footerY + 14,
-                    { align: 'center' }
+                    footerY + 14, {
+                        align: 'center'
+                    }
                 );
 
                 doc.save(`facture_${invoiceNumber}.pdf`);
@@ -359,4 +394,5 @@
         });
     </script>
 </body>
+
 </html>

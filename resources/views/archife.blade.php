@@ -71,7 +71,7 @@
                                 <span class="badge bg-danger">Non payée</span>
                             @endif
                         </td>
-                        <td>{{ $facture->date_facture }}</td>
+                        <td>{{ \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y') }}</td>
                        
                         <td>
                             <a href="{{ route('factures.show', $facture->id) }}" class="btn btn-primary btn-sm">

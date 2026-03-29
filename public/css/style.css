@@ -49,18 +49,42 @@ font-weight: 600;
 
 /* Sidebar Styles */
 .sidebar {
-width: var(--sidebar-width);
-height: 100vh;
-background-color: #2c3e50;
-position: fixed;
-top: 0;
-left: 0;
-color: white;
-padding-top: var(--header-height);
-transition: all 0.3s;
-z-index: 1000;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: #2c3e50;
+    position: fixed;
+    top: 0;
+    left: 0;
+    color: white;
+    padding-top: var(--header-height);
+    transition: all 0.3s;
+    z-index: 1000;
+
+    /* 🔥 SCROLL */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+/* SCROLLBAR STYLE */
+.sidebar::-webkit-scrollbar {
+    width: 5px;
 }
 
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.4);
+}
+.sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.3) transparent;
+}
 .sidebar-collapsed {
 transform: translateX(calc(-1 * var(--sidebar-width)));
 }
@@ -72,7 +96,7 @@ display: flex;
 align-items: center;
 }
 
-.admin-profile img {
+.admin-avatar  i {
 width: 40px;
 height: 40px;
 border-radius: 50%;
@@ -88,14 +112,10 @@ font-weight: bold;
 
 .admin-info h5 {
 margin: 0;
-font-size: 0.9rem;
+font-size: 1.5rem;
 }
 
-.admin-info p {
-margin: 0;
-font-size: 0.8rem;
-color: #7f8c8d;
-}
+
 
 /* Updated Sidebar Menu Styles */
 .nav-menu {

@@ -41,8 +41,10 @@ class ProductController extends Controller
         Product::create($formFields);
 
         // Redirect with a success message
-        return redirect('/product')->with('message', 'Product created successfully');
+        return redirect()->back()->with('message', 'Product created successfully');
     }
+
+    
    
 
     public function index(Request $request)
@@ -53,7 +55,7 @@ class ProductController extends Controller
         $query->where('Designation', 'like', '%' . $search . '%')
               ->orWhere('Referonce', 'like', '%' . $search . '%')
               ->orWhere('code', 'like', '%' . $search . '%');
-    })->paginate(10);
+    })->paginate(25);
 
     return view('product', compact('products', 'search', 'categories'));
 }
@@ -81,7 +83,39 @@ class ProductController extends Controller
         // Pass the products and customers to the view
         return view('facture', compact('products', 'customers'));
     }
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'Category_ID' => 'required',
+            'Referonce' => 'required',
+            'Designation' => 'required',
+            'code' => 'required',
+            'Quantite' => 'required|integer',
+            'prace_bay' => 'required|numeric',
+            'prace_sell' => 'required|numeric',
+        ]);
+    
+        $product = Product::findOrFail($id);
+    
+        $product->update([
+            'Category_ID' => $request->Category_ID,
+            'Referonce' => $request->Referonce,
+            'Designation' => $request->Designation,
+            'code' => $request->code,
+            'Quantite' => $request->Quantite,
+            'prace_bay' => $request->prace_bay,
+            'prace_sell' => $request->prace_sell,
+        ]);
+    
+        return redirect()->back()->with('message', 'Produit modifié avec succès');
+    }
+    public function destroy($id)
+{
+    $product = Product::findOrFail($id);
+    $product->delete();
 
+    return redirect()->back()->with('message', 'Produit supprimé avec succès');
+}
 
 
 

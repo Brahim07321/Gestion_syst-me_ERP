@@ -5,7 +5,7 @@
 
 
 <!-- Main Content -->
-<div class="main-content  " >
+<div class="main-content  main-content-expanded" id="mainContent">
     <h2 class="page-title">List of Categories</h2>
     
     <div class="table-container">
