@@ -8,6 +8,7 @@ use App\Models\PurchaseItem;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Category;
+use App\Models\StockMovement;
 
 class PurchaseController extends Controller
 {
@@ -51,6 +52,17 @@ class PurchaseController extends Controller
         $product->Quantite += $qty;
         $product->prace_bay = $price; // اختياري: آخر prix achat
         $product->save();
+
+        $product->Quantite += $qty;
+$product->save();
+
+StockMovement::create([
+    'product_id' => $product->id,
+    'type' => 'entree',
+    'quantity' => $qty,
+    'source' => 'achat',
+    'reference' => $purchase->purchase_code,
+]);
     }
 
     return redirect()->route('purchases.index')->with('success', 'Achat enregistré avec succès.');
@@ -81,7 +93,7 @@ public function index(Request $request)
             $query->where('status', $status);
         })
         ->latest()
-        ->paginate(10);
+        ->paginate(15);
 
     return view('purchases.index', compact('purchases'));
 }

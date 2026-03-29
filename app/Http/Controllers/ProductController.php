@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\customer;
+use App\Imports\ProductsImport;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TemplateExport;
+
 
 // You need this for category model
 class ProductController extends Controller
@@ -117,7 +121,31 @@ class ProductController extends Controller
     return redirect()->back()->with('message', 'Produit supprimé avec succès');
 }
 
+//eort excil
+public function export(Request $request)
+{
+    return Excel::download(new ProductsExport($request), 'stock.xlsx');
+}
 
+//imper fix excil
+public function import(Request $request)
+{
+   
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,xls'
+    ]);
+
+    Excel::import(new ProductsImport, $request->file('file'));
+
+    return back()->with('success', 'Import réussi 🔥');
+}
+
+///for dowload templet exile
+
+public function downloadTemplate()
+{
+    return Excel::download(new TemplateExport, 'template_products.xlsx');
+}
 
 
 

@@ -10,11 +10,11 @@
         <div class="table-container">
             <div class="table-header">
                 <div>
-                    
-                    <a href="{{ route('stock.export', request()->query()) }}" 
+
+                    <a href="{{ route('stock.export', request()->query()) }}"
                         class="btn btn-export text-white btn-success  btn-sm">
-                         <i class="fas fa-file-export"></i> Exporter
-                     </a>
+                        <i class="fas fa-file-export"></i> Exporter
+                    </a>
                 </div>
                 <form action="{{ route('stock.index') }}" method="GET"
                     class="d-flex gap-2 align-items-center mb-3 flex-wrap mt-2">
@@ -47,6 +47,16 @@
                     <a href="{{ route('stock.index') }}" class="btn btn-secondary btn-sm">Reset</a>
                 </form>
             </div>
+            @if($lowStockProducts->count() > 0)
+            <div class="alert alert-warning">
+                <strong>Stock faible :</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach($lowStockProducts as $product)
+                        <li>{{ $product->Designation }} — reste {{ $product->Quantite }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
 
             <table id="productTable" class="table">

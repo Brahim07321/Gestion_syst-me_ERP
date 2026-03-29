@@ -36,6 +36,10 @@ Route::post('/product', [ProductController::class, 'createproduct'])->name('prod
 Route::put('/product/{id}', [ProductController::class, 'update'])->name('product.update');
 Route::delete('/product/{id}', [ProductController::class, 'destroy'])->name('product.destroy');
 
+Route::post('/import-products', [ProductController::class, 'import'])->name('products.import');
+Route::get('/template-products', [ProductController::class, 'downloadTemplate'])
+    ->name('products.template');
+
 Route::get('/Customer', [CustomerController::class, 'ShowCustomers']);
 Route::post('/Customer', [CustomerController::class, 'createCustomer']);
 Route::get('/customers/{id}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
@@ -46,6 +50,8 @@ Route::put('/Customer/{id}', [CustomerController::class, 'update'])->name('custo
 Route::get('/stock', [StockControllerController::class, 'indexstock'])->name('stock.index');
 Route::put('/stock/{id}', [StockControllerController::class, 'update_stock'])->name('stock.update');
 Route::get('/stock/export', [StockControllerController::class, 'export'])->name('stock.export');
+
+Route::get('/stock-movements', [StockControllerController::class, 'movements'])->name('stock.movements');
 
 
 

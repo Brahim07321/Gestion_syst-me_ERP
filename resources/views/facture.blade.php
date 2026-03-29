@@ -211,10 +211,10 @@
             </div>
 
             <div class="text-center mt-4">
-                <button type="submit" class="btn btn-success btn-lg px-5">
+                <button type="submit" class="btn btn-success btn-lg ">
                     Enregistrer la Facture
                 </button>
-                <button type="button" class="btn btn-info me-2" id="save-pdf">
+                <button type="button" class="btn btn-danger me-2" id="save-pdf">
                     <i class="btn fas fa-file-pdf"></i> Enregistrer en PDF
                 </button>
             </div>
@@ -676,6 +676,7 @@ calculateTotals();
                 );
 
                 doc.save(`facture_${invoiceNumber}.pdf`);
+                document.getElementById('invoiceForm').submit();
             };
 
             img.onerror = function() {

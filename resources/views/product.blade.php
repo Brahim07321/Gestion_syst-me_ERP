@@ -11,10 +11,33 @@
                         data-bs-target="#productModal" onclick="openAddModal()">
                         <i class="fa-solid fa-plus"></i> Ajouter un Produit
                     </button>
+                    <a href="{{ route('products.template') }}" class="btn btn-dark btn-sm ">
+                        <i class="fas fa-file-download me-2"></i>
+                        Download Template
+                    </a>
 
-                    <button class="btn btn-export text-white btn-sm">
-                        <i class="fas fa-file-export"></i> Exporter
-                    </button>
+                   
+
+                   
+
+                        <a href="{{ route('stock.export', request()->query()) }}"
+                            class="btn btn-export text-white btn-success  btn-sm">
+                            <i class="fas fa-file-export"></i> Exporter
+                        </a>
+                  
+
+
+                    <form id="importForm" action="{{ route('products.import') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                    
+                        <input type="file" name="file" class="form-control mb-2 mt-2">
+                    
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div id="progressBar" class="progress-bar" style="width: 0%">0%</div>
+                        </div>
+                    
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-file-import me-1"></i>Import Excel</button>
+                    </form>
                 </div>
 
                 <form action="{{ url('/product') }}" method="GET" class="search-box">
@@ -26,6 +49,7 @@
                         </button>
                     </div>
                 </form>
+
             </div>
 
             @if (session('message'))
@@ -37,6 +61,11 @@
             @if (session('error'))
                 <div class="alert alert-danger">
                     {{ session('error') }}
+                </div>
+            @endif
+            @if (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
                 </div>
             @endif
 
@@ -57,19 +86,19 @@
 
                 <tbody>
                     @foreach ($products as $product)
-                            <tr>
-                                <td>{{ $product->id }}</td>
-                                <td>{{ $product->Referonce }}</td>
-                                <td>{{ $product->code }}</td>
-                                <td>{{ $product->category->Category ?? ($product->category->category ?? 'Non défini') }}</td>
-                                <td>{{ $product->Designation }}</td>
-                                <td>{{ $product->prace_bay }} DH</td>
-                                <td>{{ $product->prace_sell }} DH</td>
-                                <td class="product-quantity text-center">{{ $product->Quantite }}</td>
-                                <td class="text-center d-flex gap-2 justify-content-center">
-                                    <button type="button" class="btn btn-primary btn-sm action-btn" data-bs-toggle="modal"
-                                        data-bs-target="#productModal"
-                                        onclick="openEditModal(
+                        <tr>
+                            <td>{{ $product->id }}</td>
+                            <td>{{ $product->Referonce }}</td>
+                            <td>{{ $product->code }}</td>
+                            <td>{{ $product->category->Category ?? ($product->category->category ?? 'Non défini') }}</td>
+                            <td>{{ $product->Designation }}</td>
+                            <td>{{ $product->prace_bay }} DH</td>
+                            <td>{{ $product->prace_sell }} DH</td>
+                            <td class="product-quantity text-center">{{ $product->Quantite }}</td>
+                            <td class="text-center d-flex gap-2 justify-content-center">
+                                <button type="button" class="btn btn-primary btn-sm action-btn" data-bs-toggle="modal"
+                                    data-bs-target="#productModal"
+                                    onclick="openEditModal(
                                         '{{ $product->id }}',
                                         '{{ $product->Category_ID }}',
                                         '{{ $product->Referonce }}',
@@ -79,19 +108,19 @@
                                         '{{ $product->prace_bay }}',
                                         '{{ $product->prace_sell }}'
                                     )">
-                                        Modifier
-                                    </button>
+                                    Modifier
+                                </button>
 
-                                    <form action="{{ route('product.destroy', $product->id) }}" method="POST"
-                                        onsubmit="return confirm('Voulez-vous vraiment supprimer ce produit ?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm action-btn">
-                                            Supprimer
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
+                                <form action="{{ route('product.destroy', $product->id) }}" method="POST"
+                                    onsubmit="return confirm('Voulez-vous vraiment supprimer ce produit ?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm action-btn">
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
@@ -210,6 +239,25 @@
             document.getElementById('productPriceBay').value = priceBay;
             document.getElementById('productPriceSell').value = priceSell;
         }
+
+
+
+        document.getElementById('importForm').addEventListener('submit', function() {
+
+let bar = document.getElementById('progressBar');
+
+let width = 0;
+
+let interval = setInterval(() => {
+    if (width >= 90) {
+        clearInterval(interval);
+    } else {
+        width += 10;
+        bar.style.width = width + "%";
+        bar.innerHTML = width + "%";
+    }
+}, 100);
+});
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

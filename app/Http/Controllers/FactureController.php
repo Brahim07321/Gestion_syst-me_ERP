@@ -9,6 +9,8 @@ use App\Models\product;
 use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
 
+use App\Models\StockMovement;
+
 class FactureController extends Controller
 {
    
@@ -28,7 +30,7 @@ class FactureController extends Controller
                 $query->where('status', $status);
             })
             ->latest()
-            ->paginate(10)
+            ->paginate(15)
             ->appends([
                 'search' => $request->search,
                 'status' => $status,
@@ -101,6 +103,15 @@ class FactureController extends Controller
 
             // 🔥 نقص stock
             $product->decrement('Quantite', $quantity);
+
+
+StockMovement::create([
+    'product_id' => $product->id,
+    'type' => 'sortie',
+    'quantity' => $quantity,
+    'source' => 'facture',
+    'reference' => $request->invoice_number,
+]);
         }
 
         DB::commit();

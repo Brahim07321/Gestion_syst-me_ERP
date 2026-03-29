@@ -70,7 +70,22 @@ body {
     border-radius: 10px;
     margin-top: 2rem;
 }
+.btn-purple {
+    background-color: #6f42c1;
+    color: white;
+}
 
+.btn-purple:hover {
+    background-color: #5a32a3;
+}
+.btn-purple {
+    background-color: #6f42c1;
+    color: white;
+}
+
+.btn-purple:hover {
+    background-color: #5a32a3;
+}
 .btn-print {
     background: var(--secondary-color);
     color: white;

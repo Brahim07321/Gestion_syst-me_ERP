@@ -5,6 +5,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Exports\ProductsExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\StockMovement;
+use App\Models\Facture;
 
 class StockControllerController extends Controller
 {
@@ -13,6 +15,9 @@ class StockControllerController extends Controller
         $search = strtolower($request->search ?? '');
         $categoryId = $request->category_id ?? '';
         $lowStock = $request->low_stock ?? '';
+
+
+        $lowStockProducts = Product::where('Quantite', '<', 5)->get();
 
         $categories = Category::all();
 
@@ -39,7 +44,7 @@ class StockControllerController extends Controller
             'low_stock' => $lowStock,
         ]);
 
-        return view('stock', compact('categories', 'products', 'search', 'categoryId', 'lowStock'));
+        return view('stock', compact('categories', 'products', 'search', 'categoryId', 'lowStock', 'lowStockProducts'));
     }
 
     public function edit($id)
@@ -82,6 +87,16 @@ class StockControllerController extends Controller
 public function export(Request $request)
 {
     return Excel::download(new ProductsExport($request), 'stock.xlsx');
+}
+
+
+public function movements()
+{
+
+    $movements = StockMovement::with(['product', 'facture', 'purchase'])
+    ->latest()
+    ->paginate(20);
+    return view('stock_movements', compact('movements'));
 }
 
 
