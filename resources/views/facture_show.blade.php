@@ -78,43 +78,84 @@
             font-size: 0.95rem;
             padding: 8px 14px;
         }
+
+        .readonly-input {
+            background: #fff !important;
+            border: none !important;
+        }
+
+        .card {
+            border-radius: 12px;
+        }
+
+        .badge {
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 
 <body>
     <div class="invoice-container">
         <h1>Détail de la Facture</h1>
+        @if (session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
 
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <label>Client</label>
-                <input type="text" class="form-control readonly-input" value="{{ $facture->client_name }}" readonly>
+        @if (session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="row mb-4 p-3 shadow-sm rounded" style="background:#f8f9fa;">
+
+            <div class="col-md-6 border-end">
+                <label class="text-muted small">Client</label>
+                <input type="text" class="form-control readonly-input border-0 bg-transparent fw-bold"
+                    value="{{ $facture->client_name }}" readonly>
             </div>
 
-            <div class="col-md-3">
-                <label>Date Facture</label>
-                <input type="text" class="form-control readonly-input"
+            <div class="col-md-3 border-end">
+                <label class="text-muted small">Date Facture</label>
+                <input type="text" class="form-control readonly-input border-0 bg-transparent fw-bold"
                     value="{{ \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y') }}" readonly>
             </div>
 
             <div class="col-md-3">
-                <label>Statut</label>
-                <div class="form-control readonly-input  align-items-center">
-                    @if ($facture->status === 'payée')
-                        <span class="badge bg-success badge-status">Payée</span>
+                <label class="text-muted small">Statut</label>
+
+                <div class="form-control readonly-input border-0 bg-transparent text-center">
+
+                    @if ($facture->status == 'payée')
+                        <span class="badge bg-success px-3 py-2">✔ Payée</span>
+                    @elseif($facture->status == 'partiellement payée')
+                        <span class="badge bg-warning text-dark px-3 py-2">⏳ Partielle</span>
                     @else
-                        <span class="badge bg-danger badge-status">Non payée</span>
+                        <span class="badge bg-danger px-3 py-2">✖ Non payée</span>
                     @endif
+
+                    <div class="mt-2 small">
+                        <span class="text-success fw-bold">
+                            {{ number_format($facture->paid_amount ?? 0, 2) }} MAD
+                        </span>
+                        /
+                        <span class="text-danger fw-bold">
+                            {{ number_format($facture->remaining_amount ?? 0, 2) }} MAD
+                        </span>
+                    </div>
+
                 </div>
             </div>
-        </div>
 
-        <div class="mb-4">
-            <label>Numéro Facture</label>
-            <input type="text" id="invoice_number" class="form-control readonly-input"
-                value="{{ $facture->code_facture }}" readonly>
         </div>
-
+        <div class="mb-4 text-center p-3 shadow-sm rounded" style="background:#f8f9fa;">
+            <label class="text-muted small">Numéro Facture</label>
+            <h4 class="fw-bold text-primary mt-2" id="invoice_number">
+                {{ $facture->code_facture }}
+            </h4>
+        </div>
         <h3 class="mb-3">Articles</h3>
 
         <div class="table-responsive">
@@ -144,6 +185,36 @@
                     @endforelse
                 </tbody>
             </table>
+            <div class="mt-4">
+                <h4 class="mb-3">Historique des Paiements</h4>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Montant</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($facture->payments as $payment)
+                                <tr>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d/m/Y') }}</td>
+                                    <td>{{ number_format($payment->amount, 2) }} MAD</td>
+                                    <td>{{ $payment->note ?? '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center">Aucun paiement enregistré.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         @php
@@ -166,11 +237,64 @@
             <button type="button" class="btn btn-info me-2" id="save-pdf">
                 <i class="btn fas fa-file-pdf"></i> Enregistrer en PDF
             </button>
+
+            @if ($facture->status === 'payée')
+                <button type="button" class="btn btn-success me-2" disabled>
+                    <i class="fas fa-money-bill-wave"></i> Déjà payée
+                </button>
+            @else
+                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal"
+                    data-bs-target="#paymentModal">
+                    <i class="fas fa-money-bill-wave"></i> Ajouter Paiement
+                </button>
+            @endif
+        </div>
+    </div>
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('payments.store', $facture->id) }}">
+                    @csrf
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="paymentModalLabel">Ajouter un Paiement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label>Montant</label>
+                            <input type="number" step="0.01" min="0.01" name="amount" class="form-control"
+                                required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Date Paiement</label>
+                            <input type="date" name="payment_date" class="form-control"
+                                value="{{ date('Y-m-d') }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Note</label>
+                            <input type="text" name="note" class="form-control" placeholder="Optionnel">
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Reste à payer:</strong>
+                            {{ number_format($facture->remaining_amount ?? $facture->total - ($facture->paid_amount ?? 0), 2) }}
+                            MAD
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <button type="submit" class="btn btn-success">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     @php
         $formattedDate = \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y');
     @endphp
@@ -184,7 +308,7 @@
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
 
-            const invoiceNumber = document.getElementById('invoice_number').value || 'BL-0001';
+            const invoiceNumber = document.getElementById('invoice_number').textContent.trim() || 'BL-0001';
             const invoiceDate = @json($formattedDate);
 
             const customerName = @json($facture->client_name);
@@ -210,7 +334,6 @@
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
                 doc.text(`BON DE LIVRAISON N° ${invoiceNumber}`, 12, 48);
-                doc.text(`BON DE COMMANDE N°`, 12, 55);
 
                 doc.text(`Marrakech, le : ${invoiceDate}`, pageWidth - 17, 44, {
                     align: 'right'
@@ -224,9 +347,9 @@
                 const rows = [];
                 document.querySelectorAll('#items-list tr').forEach(row => {
                     const referonce = row.querySelector('.product-reference')?.textContent?.trim() ||
-                    '';
+                        '';
                     const designation = row.querySelector('.product-designation')?.textContent
-                    ?.trim() || '';
+                        ?.trim() || '';
                     const quantity = row.querySelector('.product-quantity')?.textContent?.trim() || '1';
                     const price = row.querySelector('.product-price')?.textContent?.trim() || '0.00';
                     const total = row.querySelector('.product-total')?.textContent?.trim() || '0.00';
@@ -291,11 +414,11 @@
                         },
                         3: {
                             cellWidth: 24,
-                            halign: 'right'
+                            halign: 'center'
                         },
                         4: {
                             cellWidth: 26,
-                            halign: 'right'
+                            halign: 'center'
                         }
                     },
                     margin: {
@@ -393,6 +516,9 @@
             };
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </body>
 
 </html>

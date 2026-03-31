@@ -10,8 +10,8 @@ class Purchase extends Model
         'purchase_code',
         'supplier_id',
         'purchase_date',
-        'total',
         'status',
+        'total',
     ];
 
     public function supplier()

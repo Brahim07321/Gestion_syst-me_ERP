@@ -202,12 +202,10 @@
             </div>
 
             <!-- 🔥 status -->
-            <div class="mb-4">
-                <label for="status">Statut de la facture</label>
-                <select name="status" id="status" class="form-select">
-                    <option value="non payée" selected>Non payée</option>
-                    <option value="payée">Payée</option>
-                </select>
+         
+            <div class="col-md-4">
+                <label>Montant payé</label>
+                <input type="number" name="paid_amount" class="form-control" step="0.01" min="0" value="0">
             </div>
 
             <div class="text-center mt-4">
@@ -226,160 +224,160 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <script>
-  document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
 
-const itemsList = document.getElementById('items-list');
-let itemIndex = 1;
+            const itemsList = document.getElementById('items-list');
+            let itemIndex = 1;
 
-// =========================
-// CALCUL TOTAL
-// =========================
-function calculateTotals() {
-    let subtotal = 0;
+            // =========================
+            // CALCUL TOTAL
+            // =========================
+            function calculateTotals() {
+                let subtotal = 0;
 
-    itemsList.querySelectorAll('tr').forEach(row => {
-        const price = parseFloat(row.querySelector('.price')?.value) || 0;
-        const quantity = parseInt(row.querySelector('.quantity')?.value) || 0;
-        const total = price * quantity;
+                itemsList.querySelectorAll('tr').forEach(row => {
+                    const price = parseFloat(row.querySelector('.price')?.value) || 0;
+                    const quantity = parseInt(row.querySelector('.quantity')?.value) || 0;
+                    const total = price * quantity;
 
-        row.querySelector('.total').textContent = total.toFixed(2);
-        subtotal += total;
-    });
+                    row.querySelector('.total').textContent = total.toFixed(2);
+                    subtotal += total;
+                });
 
-    const tax = subtotal * 0;
-    const grandTotal = subtotal + tax;
+                const tax = subtotal * 0;
+                const grandTotal = subtotal + tax;
 
-    document.getElementById('subtotal').textContent = subtotal.toFixed(2);
-    document.getElementById('tax').textContent = tax.toFixed(2);
-    document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
-}
-
-// =========================
-// GET PRODUCT
-// =========================
-function getProduct(referonce) {
-    const options = document.querySelectorAll('#products-list option');
-
-    for (let opt of options) {
-        if (opt.value === referonce) {
-            return {
-                referonce: opt.dataset.referonce,
-                designation: opt.dataset.designation,
-                price: opt.dataset.price,
-                stock: opt.dataset.stock
-            };
-        }
-    }
-
-    return null;
-}
-
-// =========================
-// GET CLIENT
-// =========================
-function getClient(name) {
-    const options = document.querySelectorAll('#customers-list option');
-
-    for (let opt of options) {
-        if (opt.value === name) {
-            return {
-                id: opt.dataset.id
-            };
-        }
-    }
-
-    return null;
-}
-
-// =========================
-// CLIENT SEARCH
-// =========================
-const customerSearch = document.getElementById('customer_search');
-const customerId = document.getElementById('customer_id');
-
-customerSearch.addEventListener('input', function() {
-    const client = getClient(this.value);
-
-    if (client) {
-        customerId.value = client.id;
-    } else {
-        customerId.value = '';
-    }
-});
-
-// =========================
-// PRODUCT SELECT + STOCK CHECK
-// =========================
-itemsList.addEventListener('input', function(e) {
-
-    if (e.target.classList.contains('product-search')) {
-
-        const row = e.target.closest('tr');
-        const product = getProduct(e.target.value);
-
-        if (product) {
-
-            const stock = parseInt(product.stock) || 0;
-
-            // ❌ rupture
-            if (stock === 0) {
-                alert('⚠️ هذا المنتج غير متوفر في المخزون');
-
-                row.querySelector('.product-hidden').value = '';
-                row.querySelector('.designation').value = '';
-                row.querySelector('.price').value = '';
-                row.querySelector('.total').textContent = '0.00';
-
-                return;
+                document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+                document.getElementById('tax').textContent = tax.toFixed(2);
+                document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
             }
 
-            // fill data
-            row.querySelector('.product-hidden').value = product.referonce;
-            row.querySelector('.designation').value = product.designation;
-            row.querySelector('.price').value = parseFloat(product.price).toFixed(2);
+            // =========================
+            // GET PRODUCT
+            // =========================
+            function getProduct(referonce) {
+                const options = document.querySelectorAll('#products-list option');
 
-            const quantityInput = row.querySelector('.quantity');
-
-            // 🔥 check quantity > stock
-            quantityInput.oninput = function () {
-                let qty = parseInt(this.value) || 0;
-
-                if (qty > stock) {
-                    alert('⚠️ الكمية المطلوبة أكبر من المخزون (Stock: ' + stock + ')');
-                    this.value = stock;
+                for (let opt of options) {
+                    if (opt.value === referonce) {
+                        return {
+                            referonce: opt.dataset.referonce,
+                            designation: opt.dataset.designation,
+                            price: opt.dataset.price,
+                            stock: opt.dataset.stock
+                        };
+                    }
                 }
 
-                calculateTotals();
-            };
+                return null;
+            }
 
-        } else {
-            // reset
-            row.querySelector('.product-hidden').value = '';
-            row.querySelector('.designation').value = '';
-            row.querySelector('.price').value = '';
-            row.querySelector('.total').textContent = '0.00';
-        }
+            // =========================
+            // GET CLIENT
+            // =========================
+            function getClient(name) {
+                const options = document.querySelectorAll('#customers-list option');
 
-        calculateTotals();
-    }
+                for (let opt of options) {
+                    if (opt.value === name) {
+                        return {
+                            id: opt.dataset.id
+                        };
+                    }
+                }
 
-    // update totals
-    if (
-        e.target.classList.contains('price') ||
-        e.target.classList.contains('quantity')
-    ) {
-        calculateTotals();
-    }
-});
+                return null;
+            }
 
-// =========================
-// ADD ROW
-// =========================
-document.getElementById('add-item').addEventListener('click', function() {
+            // =========================
+            // CLIENT SEARCH
+            // =========================
+            const customerSearch = document.getElementById('customer_search');
+            const customerId = document.getElementById('customer_id');
 
-    const newRow = document.createElement('tr');
+            customerSearch.addEventListener('input', function() {
+                const client = getClient(this.value);
 
-    newRow.innerHTML = `
+                if (client) {
+                    customerId.value = client.id;
+                } else {
+                    customerId.value = '';
+                }
+            });
+
+            // =========================
+            // PRODUCT SELECT + STOCK CHECK
+            // =========================
+            itemsList.addEventListener('input', function(e) {
+
+                if (e.target.classList.contains('product-search')) {
+
+                    const row = e.target.closest('tr');
+                    const product = getProduct(e.target.value);
+
+                    if (product) {
+
+                        const stock = parseInt(product.stock) || 0;
+
+                        // ❌ rupture
+                        if (stock === 0) {
+                            alert('⚠️ هذا المنتج غير متوفر في المخزون');
+
+                            row.querySelector('.product-hidden').value = '';
+                            row.querySelector('.designation').value = '';
+                            row.querySelector('.price').value = '';
+                            row.querySelector('.total').textContent = '0.00';
+
+                            return;
+                        }
+
+                        // fill data
+                        row.querySelector('.product-hidden').value = product.referonce;
+                        row.querySelector('.designation').value = product.designation;
+                        row.querySelector('.price').value = parseFloat(product.price).toFixed(2);
+
+                        const quantityInput = row.querySelector('.quantity');
+
+                        // 🔥 check quantity > stock
+                        quantityInput.oninput = function() {
+                            let qty = parseInt(this.value) || 0;
+
+                            if (qty > stock) {
+                                alert('⚠️ الكمية المطلوبة أكبر من المخزون (Stock: ' + stock + ')');
+                                this.value = stock;
+                            }
+
+                            calculateTotals();
+                        };
+
+                    } else {
+                        // reset
+                        row.querySelector('.product-hidden').value = '';
+                        row.querySelector('.designation').value = '';
+                        row.querySelector('.price').value = '';
+                        row.querySelector('.total').textContent = '0.00';
+                    }
+
+                    calculateTotals();
+                }
+
+                // update totals
+                if (
+                    e.target.classList.contains('price') ||
+                    e.target.classList.contains('quantity')
+                ) {
+                    calculateTotals();
+                }
+            });
+
+            // =========================
+            // ADD ROW
+            // =========================
+            document.getElementById('add-item').addEventListener('click', function() {
+
+                const newRow = document.createElement('tr');
+
+                newRow.innerHTML = `
         <td>
             <input type="text" class="form-control product-search search-input"
                 list="products-list" placeholder="Référence..." required>
@@ -407,37 +405,37 @@ document.getElementById('add-item').addEventListener('click', function() {
         </td>
     `;
 
-    itemsList.appendChild(newRow);
-    itemIndex++;
-});
+                itemsList.appendChild(newRow);
+                itemIndex++;
+            });
 
-// =========================
-// DELETE ROW
-// =========================
-itemsList.addEventListener('click', function(e) {
+            // =========================
+            // DELETE ROW
+            // =========================
+            itemsList.addEventListener('click', function(e) {
 
-    if (e.target.closest('.delete-item')) {
+                if (e.target.closest('.delete-item')) {
 
-        const rows = itemsList.querySelectorAll('tr');
+                    const rows = itemsList.querySelectorAll('tr');
 
-        if (rows.length > 1) {
-            e.target.closest('tr').remove();
-        } else {
-            const row = e.target.closest('tr');
-            row.querySelector('.product-search').value = '';
-            row.querySelector('.product-hidden').value = '';
-            row.querySelector('.designation').value = '';
-            row.querySelector('.price').value = '';
-            row.querySelector('.quantity').value = 1;
-            row.querySelector('.total').textContent = '0.00';
-        }
+                    if (rows.length > 1) {
+                        e.target.closest('tr').remove();
+                    } else {
+                        const row = e.target.closest('tr');
+                        row.querySelector('.product-search').value = '';
+                        row.querySelector('.product-hidden').value = '';
+                        row.querySelector('.designation').value = '';
+                        row.querySelector('.price').value = '';
+                        row.querySelector('.quantity').value = 1;
+                        row.querySelector('.total').textContent = '0.00';
+                    }
 
-        calculateTotals();
-    }
-});
+                    calculateTotals();
+                }
+            });
 
-calculateTotals();
-});
+            calculateTotals();
+        });
         document.getElementById('save-pdf').addEventListener('click', function() {
             const {
                 jsPDF

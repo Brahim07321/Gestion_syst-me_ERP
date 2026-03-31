@@ -68,15 +68,45 @@
                                 <td>
                                     @if ($purchase->status == 'reçu')
                                         <span class="badge bg-success">Reçu</span>
+                                    @elseif($purchase->status == 'annulé')
+                                        <span class="badge bg-danger">Annulé</span>
                                     @else
-                                        <span class="badge bg-warning text-dark">En attente</span>
+                                        <div class="d-flex gap-2">
+                                            <form action="{{ route('purchases.status', $purchase->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="btn btn-warning btn-sm">
+                                                    Marquer comme reçu
+                                                </button>
+                                            </form>
+
+                                            <form action="{{ route('purchases.cancel', $purchase->id) }}" method="POST"
+                                                onsubmit="return confirm('Annuler cet achat ?')">
+                                                @csrf
+                                                <button type="submit" class="btn btn-secondary btn-sm">
+                                                    Annuler
+                                                </button>
+                                            </form>
+                                        </div>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center d-flex gap-2 justify-content-center">
                                     <a href="{{ route('purchases.show', $purchase->id) }}"
                                         class="btn btn-sm btn-primary text-white">
                                         <i class="fas fa-eye"></i> Voir
                                     </a>
+
+
+                                    <form action="{{ route('purchases.destroy', $purchase->id) }}" method="POST"
+                                        onsubmit="return confirm('Supprimer cet achat ?')">
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button class="btn btn-danger btn-sm action-btn">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+
+
                                 </td>
                             </tr>
                         @empty

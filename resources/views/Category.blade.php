@@ -112,7 +112,7 @@
             <div class="modal-body">
                     <div class="mb-3">
                         <label for="categoryName" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="categoryName" name="category" placeholder="Enter category name" required>
+                        <input type="text" class="form-control" id="categoryName" name="Category" placeholder="Enter category name" required>
                     </div>
             </div>
             <div class="modal-footer">

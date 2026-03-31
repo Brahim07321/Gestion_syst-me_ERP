@@ -8,6 +8,8 @@ use App\Http\Controllers\FactureController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ExpenseController;
 
 
 
@@ -22,6 +24,9 @@ Route::get('/facture', [ProductController::class, 'showInvoice'])->name('facture
 // save facture
 Route::post('/facture', [FactureController::class, 'store'])->name('facture.store');
 Route::get('/factures/{id}', [FactureController::class, 'show'])->name('factures.show'); 
+
+//for pymnt
+Route::post('/factures/{id}/payments', [PaymentController::class, 'store'])->name('payments.store');
 
 
 
@@ -59,8 +64,17 @@ Route::get('/purchases', [PurchaseController::class, 'index'])->name('purchases.
 Route::get('/purchase/create', [PurchaseController::class, 'create'])->name('purchases.create');
 Route::post('/purchase', [PurchaseController::class, 'store'])->name('purchases.store');
 Route::get('/purchases/{id}', [PurchaseController::class, 'show'])->name('purchases.show');
-
+Route::post('/purchases/{id}/status', [PurchaseController::class, 'changeStatus'])->name('purchases.status');
+Route::delete('/purchases/{id}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
+Route::post('/purchases/{id}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel');
 
 
 Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
 Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+
+///expancce
+Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+Route::delete('/expenses/{id}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+
+Route::get('/reports', [FactureController::class, 'report'])->name('reports');

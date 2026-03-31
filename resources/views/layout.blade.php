@@ -14,26 +14,26 @@
 
 <body>
     <style>
-      :root {
-    --sidebar-width: 250px;
-    --header-height: 60px;
+        :root {
+            --sidebar-width: 250px;
+            --header-height: 60px;
 
-    --card-blue: #3b82f6;
-    --card-green: #10b981;
-    --card-orange: #f59e0b;
-    --card-red: #ef4444;
-    --card-purple: #8b5cf6;
-    --card-pink: #ec4899;
+            --card-blue: #3b82f6;
+            --card-green: #10b981;
+            --card-orange: #f59e0b;
+            --card-red: #ef4444;
+            --card-purple: #8b5cf6;
+            --card-pink: #ec4899;
 
-    --menu-dashboard: #3b82f6;
-    --menu-category: #10b981;
-    --menu-product: #f59e0b;
-    --menu-customer: #ef4444;
-    --menu-supplier: #8b5cf6;
-    --menu-outgoing: #06b6d4;
-    --menu-purchase: #14b8a6;
-    --menu-users: #64748b;
-}
+            --menu-dashboard: #3b82f6;
+            --menu-category: #10b981;
+            --menu-product: #f59e0b;
+            --menu-customer: #ef4444;
+            --menu-supplier: #8b5cf6;
+            --menu-outgoing: #06b6d4;
+            --menu-purchase: #14b8a6;
+            --menu-users: #64748b;
+        }
 
         /* Card Colors */
         .card-blue {
@@ -59,39 +59,41 @@
         .card-pink {
             background-color: var(--card-pink);
         }
+
         .nav-menu li.active {
-    background: #c5bebe;
-    color: #000000;
-    font-weight: 600;
-}
+            background: #c5bebe;
+            color: #000000;
+            font-weight: 600;
+        }
 
 
-.nav-menu {
-    list-style: none;
-    
-    overflow-y: auto;
-    overflow-x: hidden;
-}
+        .nav-menu {
+            list-style: none;
+
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
 
 
 
-/* SCROLLBAR MODERN */
-.sidebar {
-    scrollbar-width: thin;
-    scrollbar-color: #a7acb4 transparent;
-}
-.sidebar::-webkit-scrollbar {
-    width: 4px;
-}
+        /* SCROLLBAR MODERN */
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #a7acb4 transparent;
+        }
 
-.sidebar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #3b82f6, #6366f1);
-    border-radius: 10px;
-}
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
 
-.sidebar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #60a5fa, #818cf8);
-}
+        .sidebar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3b82f6, #6366f1);
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #60a5fa, #818cf8);
+        }
     </style>
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
@@ -111,39 +113,40 @@
                     <i class="fas fa-chart-line"></i> Dashboard
                 </li>
             </a>
-        
+
             <a href="/facture">
                 <li class="{{ request()->is('facture') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar"></i> Factures
                 </li>
             </a>
-        
+
             <a href="/archife">
                 <li class="{{ request()->is('archife') ? 'active' : '' }}">
                     <i class="fas fa-folder-open"></i> Archive Factures
                 </li>
             </a>
-        
+
             <a href="/product">
                 <li class="{{ request()->is('product') ? 'active' : '' }}">
                     <i class="fas fa-box-open"></i> Produits
                 </li>
             </a>
-        
+
             <a href="/Category">
                 <li class="{{ request()->is('Category') ? 'active' : '' }}">
                     <i class="fas fa-layer-group"></i> Catégories
                 </li>
             </a>
-        
+
             <a href="/stock">
                 <li class="{{ request()->is('stock') || request()->is('stock/*') ? 'active' : '' }}">
                     <i class="fas fa-warehouse"></i> Stock
                 </li>
             </a>
-        
+
             <a href="/purchases">
-                <li class="{{ request()->is('purchases') || request()->is('purchases') || request()->is('purchase/*') ? 'active' : '' }}">
+                <li
+                    class="{{ request()->is('purchases') || request()->is('purchases') || request()->is('purchase/*') ? 'active' : '' }}">
                     <i class="fas fa-cart-plus"></i> Achats
                 </li>
             </a>
@@ -152,26 +155,32 @@
                     <i class="fas fa-exchange-alt"></i> Historique Stock
                 </li>
             </a>
-        
+
             <a href="/suppliers">
                 <li class="{{ request()->is('suppliers') || request()->is('suppliers/*') ? 'active' : '' }}">
                     <i class="fas fa-truck"></i> Fournisseurs
                 </li>
             </a>
-        
+
             <a href="/Customer">
                 <li class="{{ request()->is('Customer') || request()->is('customers/*') ? 'active' : '' }}">
                     <i class="fas fa-user-friends"></i> Clients
                 </li>
             </a>
-        
+            <a href="/expenses">
+                <li class="{{ request()->is('expenses') || request()->is('expenses/*') ? 'active' : '' }}">
+                    <i class="fas fa-wallet"></i> Dépenses
+                </li>
+            </a>
+
             <a href="#">
                 <li class="{{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}">
                     <i class="fas fa-user-cog"></i> Utilisateurs
                 </li>
             </a>
-        
-        </ul>    </div>
+
+        </ul>
+    </div>
 
     <!-- Header -->
     <div class="header">
@@ -198,8 +207,10 @@
         // Toggle sidebar on button click
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
-            document.getElementById('mainContent').classList.toggle('main-content-expanded');
-
+            const mainContent = document.getElementById('mainContent');
+            if (mainContent) {
+                mainContent.classList.toggle('main-content-expanded');
+            }
             // Change icon based on state
             const icon = this.querySelector('i');
             if (document.getElementById('sidebar').classList.contains('sidebar-collapsed')) {
@@ -244,12 +255,17 @@
 
         // Responsive sidebar toggle for mobile
         function handleResize() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+
+            if (!sidebar || !mainContent) return;
+
             if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.add('sidebar-collapsed');
-                document.getElementById('mainContent').classList.add('main-content-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+                mainContent.classList.add('main-content-expanded');
             } else {
-                document.getElementById('sidebar').classList.remove('sidebar-collapsed');
-                document.getElementById('mainContent').classList.remove('main-content-expanded');
+                sidebar.classList.remove('sidebar-collapsed');
+                mainContent.classList.remove('main-content-expanded');
             }
         }
 

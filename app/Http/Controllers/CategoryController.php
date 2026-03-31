@@ -16,7 +16,7 @@ class CategoryController extends Controller
     {
         // Validate input
         $formFields = $request->validate([
-            'category' => 'required|string|max:255', // Add constraints for better validation
+            'Category' => 'required|string|max:255', // Add constraints for better validation
         ]);
     
         // Add category

@@ -7,9 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\product;
 use App\Models\Customer;
+use App\Models\Purchase;
+use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
-
 use App\Models\StockMovement;
+use App\Models\Expense;
+use App\Models\FactureItem;
 
 class FactureController extends Controller
 {
@@ -45,7 +48,6 @@ class FactureController extends Controller
         'invoice_number' => 'required|string|max:255',
         'invoice_date' => 'required|date',
         'customer_search' => 'required|string|max:255',
-        'status' => 'required|string',
         'items' => 'required|array|min:1',
     ]);
 
@@ -61,13 +63,49 @@ class FactureController extends Controller
             $total += $price * $quantity;
         }
 
+        $paid = (float) ($request->paid_amount ?? 0);
+
+        if ($paid == 0) {
+            $status = 'non payée';
+        } elseif ($paid < $total) {
+            $status = 'partiellement payée';
+        } else {
+            $status = 'payée';
+        }
+        
         $facture = Facture::create([
             'code_facture' => $request->invoice_number,
             'client_name' => $request->customer_search,
             'total' => $total,
             'date_facture' => $request->invoice_date,
-            'status' => $request->status,
+            'status' => $status,
+            'paid_amount' => 0,
+            'remaining_amount' => $total,
         ]);
+        
+        if ($paid > 0) {
+            Payment::create([
+                'facture_id' => $facture->id,
+                'amount' => $paid,
+                'payment_date' => $request->invoice_date,
+                'note' => 'Paiement initial',
+            ]);
+        }
+        
+        $newTotalPaid = $facture->payments()->sum('amount');
+        $newRemaining = $facture->total - $newTotalPaid;
+        
+        if ($newRemaining <= 0) {
+            $facture->status = 'payée';
+        } elseif ($newTotalPaid > 0) {
+            $facture->status = 'partiellement payée';
+        } else {
+            $facture->status = 'non payée';
+        }
+        
+        $facture->paid_amount = $newTotalPaid;
+        $facture->remaining_amount = $newRemaining;
+        $facture->save();
 
         foreach ($request->items as $item) {
             $price = (float) ($item['price'] ?? 0);
@@ -130,8 +168,8 @@ StockMovement::create([
 
     public function show($id)
 {
-    $facture = Facture::with('items')->findOrFail($id);
-    return view('facture_show', compact('facture'));
+    $facture = Facture::with(['items', 'payments'])->findOrFail($id);
+        return view('facture_show', compact('facture'));
 }
 public function dashboard()
 {
@@ -139,6 +177,7 @@ public function dashboard()
     $CategoryCount = Category::count();
     $productesCount = Product::count();
     $CustomeresCount = Customer::count();
+    $PurchaseCount = Purchase::count();
     $lowStockCount = Product::where('Quantite', '<', 5)->count();
     $productsChart = Product::select('Designation', 'Quantite')->get();
 
@@ -151,15 +190,97 @@ public function dashboard()
         ->groupBy('categories.id', 'categories.category')
         ->get();
 
-    return view('index', compact(
+        //contabilte dashbord
+        $totalSales = Facture::sum('total');
+        $totalPaid = Facture::sum('paid_amount');
+        $totalRemaining = Facture::sum('remaining_amount');
+
+        $totalPurchases = Purchase::sum('total');
+        $totalExpenses = Expense::sum('amount');
+
+        $netProfit = $totalSales - $totalPurchases - $totalExpenses;
+
+        $topProducts = \App\Models\FactureItem::select(
+            'referonce',
+            'designation',
+            DB::raw('SUM(quantity) as total_sold')
+        )
+        ->groupBy('referonce', 'designation')
+        ->orderByDesc('total_sold')
+        ->limit(5)
+        ->get();
+
+        $topProfitProducts = \App\Models\FactureItem::join('products', 'products.Referonce', '=', 'facture_items.referonce')
+        ->select(
+            'facture_items.designation',
+            DB::raw('SUM((facture_items.price - products.prace_bay) * facture_items.quantity) as total_profit')
+        )
+        ->groupBy('facture_items.designation')
+        ->orderByDesc('total_profit')
+        ->limit(5)
+        ->get();
+        
+            return view('index', compact(
         'facturesCount',
         'CategoryCount',
         'productesCount',
         'CustomeresCount',
+        'PurchaseCount',
         'lowStockCount',
         'categoryStats',
-        'productsChart' 
+        'productsChart',
+        'totalSales',
+        'totalPaid',
+        'totalRemaining',
+        'totalPurchases',
+        'totalExpenses',
+        'netProfit',
+        'topProducts',
+        'topProfitProducts'
 
+    ));
+}
+
+
+public function report(Request $request)
+{
+    $month = $request->month ?? date('Y-m');
+
+    // 🔹 VENTES
+    $totalSales = Facture::whereMonth('date_facture', date('m', strtotime($month)))
+        ->whereYear('date_facture', date('Y', strtotime($month)))
+        ->sum('total');
+
+    // 🔹 PAYEMENTS
+    $totalPaid = Facture::whereMonth('date_facture', date('m', strtotime($month)))
+        ->whereYear('date_facture', date('Y', strtotime($month)))
+        ->sum('paid_amount');
+
+    $totalRemaining = Facture::whereMonth('date_facture', date('m', strtotime($month)))
+        ->whereYear('date_facture', date('Y', strtotime($month)))
+        ->sum('remaining_amount');
+
+    // 🔹 ACHATS
+    $totalPurchases = Purchase::whereMonth('purchase_date', date('m', strtotime($month)))
+        ->whereYear('purchase_date', date('Y', strtotime($month)))
+        ->sum('total');
+
+    // 🔹 DEPENSES
+    $totalExpenses = Expense::whereMonth('expense_date', date('m', strtotime($month)))
+        ->whereYear('expense_date', date('Y', strtotime($month)))
+        ->sum('amount');
+
+    // 🔹 PROFIT
+    $netProfit = $totalSales - $totalPurchases - $totalExpenses;
+
+    return view('reports.index', compact(
+        'month',
+        'totalSales',
+        'totalPaid',
+        'totalRemaining',
+        'totalPurchases',
+        'totalExpenses',
+        'netProfit'
     ));
 }
 }

@@ -37,10 +37,12 @@
             <div class="col-md-4">
                 <strong>Status:</strong><br>
 
-                @if($purchase->status == 'reçu')
-                    <span class="badge bg-success">Reçu</span>
-                @else
-                    <span class="badge bg-warning text-dark">En attente</span>
+                @if ($purchase->status == 'reçu')
+                                        <span class="badge bg-success">Reçu</span>
+                                    @elseif($purchase->status == 'annulé')
+                                        <span class="badge bg-danger">Annulé</span>
+                                    @else
+                 <span class="badge bg-warning text-dark">En attente</span>
                 @endif
             </div>
 

@@ -20,6 +20,8 @@ class ProductController extends Controller
     {
         return view(view: 'product'); // Ensure blade file is named 'customer.blade.php'
     }
+
+
     public function FormCategory()
     {
         // Fetch all category
@@ -28,23 +30,25 @@ class ProductController extends Controller
         // Pass the data to the view
         return view('product', ['Categorys' => $Categorys]);
     }
+
+
     public function createproduct(Request $request)
     {
-        // Validate the request data
         $formFields = $request->validate([
             'Category_ID' => 'required',
             'code' => 'required',
-            'Referonce' => 'required',
+            'Referonce' => 'required|unique:products,Referonce',
             'Designation' => 'required',
             'prace_bay' => 'required|numeric',
             'prace_sell' => 'required|numeric',
             'Quantite' => 'required|integer',
+        ], [
+            'Referonce.unique' => '⚠️Référence déjà existante.',
+            'Referonce.required' => '⚠️ خاصك تدخل référence.',
         ]);
-
-        // Create a new product using the validated fields
+    
         Product::create($formFields);
-
-        // Redirect with a success message
+    
         return redirect()->back()->with('message', 'Product created successfully');
     }
 
@@ -87,6 +91,8 @@ class ProductController extends Controller
         // Pass the products and customers to the view
         return view('facture', compact('products', 'customers'));
     }
+
+
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -113,6 +119,8 @@ class ProductController extends Controller
     
         return redirect()->back()->with('message', 'Produit modifié avec succès');
     }
+
+
     public function destroy($id)
 {
     $product = Product::findOrFail($id);

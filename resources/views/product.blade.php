@@ -151,6 +151,11 @@
                     <input type="hidden" name="_method" id="formMethod" value="POST">
 
                     <div class="modal-body">
+                        @if ($errors->has('Referonce'))
+    <div class="alert alert-danger">
+        {{ $errors->first('Referonce') }}
+    </div>
+@endif
                         <div class="mb-3">
                             <label for="productCategory" class="form-label">Catégorie</label>
                             <select class="form-select" id="productCategory" name="Category_ID" required>
@@ -165,9 +170,19 @@
 
                         <div class="mb-3">
                             <label for="productReferonce" class="form-label">Référence</label>
-                            <input type="text" class="form-control" id="productReferonce" name="Referonce" required>
+                            <input type="text"
+                                   class="form-control @error('Referonce') is-invalid @enderror"
+                                   id="productReferonce"
+                                   name="Referonce"
+                                   value="{{ old('Referonce') }}"
+                                   required>
+                        
+                            @error('Referonce')
+                                <div class="invalid-feedback d-block">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
-
                         <div class="mb-3">
                             <label for="productName" class="form-label">Désignation</label>
                             <input type="text" class="form-control" id="productName" name="Designation" required>
@@ -259,6 +274,14 @@ let interval = setInterval(() => {
 }, 100);
 });
     </script>
+    @if ($errors->has('Referonce'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+            productModal.show();
+        });
+    </script>
+    @endif
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 @endsection
