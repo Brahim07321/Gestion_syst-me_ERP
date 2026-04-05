@@ -141,9 +141,13 @@
 
             <div class="mb-4">
                 <label for="invoice_number">Numéro Facture</label>
-                <input type="text" name="invoice_number" id="invoice_number" class="form-control"
-                    value="INV-{{ time() }}" required>
-            </div>
+                <input
+                type="text"
+                name="invoice_number"
+                id="invoice_number"
+                class="form-control"
+                value="{{ old('invoice_number') }}"
+                placeholder="Laisser vide pour génération automatique">            </div>
 
             <h3 class="mb-3">Articles</h3>
 

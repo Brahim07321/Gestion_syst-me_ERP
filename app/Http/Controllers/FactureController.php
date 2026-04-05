@@ -71,7 +71,7 @@ class FactureController extends Controller
     public function store(Request $request)
 {
     $request->validate([
-        'invoice_number' => 'required|string|max:255',
+        'invoice_number' => 'nullable|string|max:255|unique:factures,code_facture',
         'invoice_date' => 'required|date',
         'customer_search' => 'required|string|max:255',
         'items' => 'required|array|min:1',
@@ -81,6 +81,11 @@ class FactureController extends Controller
 
     try {
 
+        $invoiceNumber = trim($request->invoice_number ?? '');
+
+        if ($invoiceNumber === '') {
+            $invoiceNumber = 'INV-' . now()->format('Ymd-His');
+        }
         $total = 0;
 
         foreach ($request->items as $item) {
@@ -100,7 +105,7 @@ class FactureController extends Controller
         }
         
         $facture = Facture::create([
-            'code_facture' => $request->invoice_number,
+            'code_facture' => $invoiceNumber,
             'client_name' => $request->customer_search,
             'total' => $total,
             'date_facture' => $request->invoice_date,
@@ -174,7 +179,7 @@ StockMovement::create([
     'type' => 'sortie',
     'quantity' => $quantity,
     'source' => 'facture',
-    'reference' => $request->invoice_number,
+    'reference' => $invoiceNumber,
 ]);
         }
 

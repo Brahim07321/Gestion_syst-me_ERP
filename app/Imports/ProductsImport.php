@@ -3,50 +3,35 @@
 namespace App\Imports;
 
 use App\Models\Product;
-
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class ProductsImport implements ToModel, WithHeadingRow{
-  
+class ProductsImport implements ToModel, WithHeadingRow
+{
+    public $skipped = 0; // 🔥 compteur
+
     public function model(array $row)
     {
-        // 🔥 normalize
-        $referonce = $row['referonce'] ?? null;
-        $quantite = (int) ($row['quantite'] ?? 0);
-    
-        if (!$referonce) {
+        $referonce = trim($row['referonce'] ?? '');
+
+        if ($referonce === '') {
             return null;
         }
-    
-        $product = Product::where('Referonce', $referonce)->first();
-    
-        if ($product) {
-    
-            // ✅ زيد stock (ماشي replace)
-            $product->Quantite += $quantite;
-    
-            // update باقي المعلومات
-            $product->Category_ID = $row['category_id'] ?? $product->Category_ID;
-            $product->code = $row['code'] ?? $product->code;
-            $product->Designation = $row['designation'] ?? $product->Designation;
-            $product->prace_bay = $row['prace_bay'] ?? $product->prace_bay;
-            $product->prace_sell = $row['prace_sell'] ?? $product->prace_sell;
-    
-            $product->save();
-    
+
+        // ✅ إلا كان موجود
+        if (Product::where('Referonce', $referonce)->exists()) {
+            $this->skipped++; // 🔥 زيد فالكاونتر
             return null;
         }
-    
-        // create جديد
+
         return new Product([
-            'Category_ID' => $row['category_id'],
-            'code' => $row['code'],
+            'Category_ID' => $row['category_id'] ?? null,
+            'code' => $row['code'] ?? null,
             'Referonce' => $referonce,
-            'Designation' => $row['designation'],
-            'prace_bay' => $row['prace_bay'],
-            'prace_sell' => $row['prace_sell'],
-            'Quantite' => $quantite,
+            'Designation' => $row['designation'] ?? null,
+            'prace_bay' => $row['prace_bay'] ?? 0,
+            'prace_sell' => $row['prace_sell'] ?? 0,
+            'Quantite' => 0,
         ]);
     }
 }

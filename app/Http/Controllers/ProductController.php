@@ -9,7 +9,8 @@ use App\Models\customer;
 use App\Imports\ProductsImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TemplateExport;
-
+use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 // You need this for category model
 class ProductController extends Controller
@@ -138,7 +139,6 @@ public function export(Request $request)
 
 public function import(Request $request)
 {
-    // ✅ validation
     $request->validate([
         'file' => 'required|file|mimes:xlsx,xls'
     ], [
@@ -147,25 +147,49 @@ public function import(Request $request)
     ]);
 
     try {
-        Excel::import(new ProductsImport, $request->file('file'));
+        $file = $request->file('file');
 
-        // ✅ SUCCESS
+        $spreadsheet = IOFactory::load($file->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // غير 6 colonnes
+        $headerRow = $sheet->rangeToArray('A1:F1', null, true, true, true)[1];
+
+        $headers = array_map(function ($value) {
+            return trim((string) $value);
+        }, array_values($headerRow));
+
+        $expectedHeaders = [
+            'Category_ID',
+            'code',
+            'Referonce',
+            'Designation',
+            'prace_bay',
+            'prace_sell',
+        ];
+
+        if ($headers !== $expectedHeaders) {
+            return back()->with('error', 'Le fichier Excel ne correspond pas au modèle requis.');
+        }
+
+        $import = new ProductsImport();
+        Excel::import($import, $file);
+        if ($import->skipped > 0) {
+            return back()->with('warning', $import->skipped . ' produits déjà existants n’ont pas été importés.');
+        }
+        
         return back()->with('success', 'Le fichier Excel a été importé avec succès.');
 
+        
     } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-
-        // ⚠️ WARNING (lignes فيها errors)
         return back()->with('warning', 'Certaines lignes contiennent des erreurs et n’ont pas été importées.');
 
     } catch (\Exception $e) {
-
-        // ❌ ERROR (مشكل عام)
         Log::error($e);
 
-        return back()->with('error', 'Une erreur est survenue أثناء l’importation.');
+        return back()->with('error', 'Une erreur est survenue pendant l’importation.');
     }
 }
-
 ///for dowload templet exile    
 
 public function downloadTemplate()

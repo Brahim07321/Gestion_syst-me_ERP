@@ -25,7 +25,8 @@
                     </div>
 
                     <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ route('purchases.index') }}" class="btn btn-light rounded-pill px-4">
+                        <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('purchases.index') }}"
+                            class="btn btn-light rounded-pill px-4">
                             <i class="fas fa-arrow-left me-2"></i>Retour
                         </a>
 

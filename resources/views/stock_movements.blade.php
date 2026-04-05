@@ -6,18 +6,35 @@
     <!-- TITRE -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <h2 class="fw-bold mb-1">Historique des mouvements de stock</h2>
-        <div class="d-flex flex-wrap gap-2">
-
-
-            <a href="{{ route('stock.movements.export.excel', request()->query()) }}"
-               class="btn btn-primary rounded-pill px-4">
-                <i class="fas fa-file-excel me-2"></i>Exporter Excel
-            </a>
+        <div class="ms-md-auto">
+            <div class="dropdown">
         
-            <a href="{{ route('stock.movements.export.pdf', request()->query()) }}"
-               class="btn btn-danger rounded-pill px-4">
-                <i class="fas fa-file-pdf me-2"></i>Exporter PDF
-            </a>
+                <button class="btn btn-light rounded-pill px-3 shadow-sm" type="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+        
+                <ul class="dropdown-menu dropdown-menu-end p-2 border-0 shadow rounded-4">
+        
+                    <li>
+                        <a href="{{ route('stock.movements.export.excel', request()->query()) }}"
+                           class="dropdown-item rounded-3 d-flex align-items-center gap-2">
+                            <i class="fas fa-file-excel text-success"></i>
+                            Exporter Excel
+                        </a>
+                    </li>
+        
+                    <li>
+                        <a href="{{ route('stock.movements.export.pdf', request()->query()) }}"
+                           class="dropdown-item rounded-3 d-flex align-items-center gap-2">
+                            <i class="fas fa-file-pdf text-danger"></i>
+                            Exporter PDF
+                        </a>
+                    </li>
+        
+                </ul>
+        
+            </div>
         </div>
         
 

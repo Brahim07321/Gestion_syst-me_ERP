@@ -33,7 +33,6 @@ class PurchaseImportController extends Controller
 
     public function preview(Request $request)
     {
-        
         $request->validate([
             'file' => 'required|mimes:xlsx,xls',
             'supplier_id' => 'required|exists:suppliers,id',
@@ -287,6 +286,6 @@ class PurchaseImportController extends Controller
 
     session()->forget(['import_purchase', 'import_purchase_meta']);
 
-    return redirect()->route('purchases.show', $purchase->id)
-    ->with('success', 'Achat importé avec succès ');}
+return redirect()->route('purchases.show', $purchase->id)
+    ->with('success', 'Achat importé avec succès ✅');}
 }

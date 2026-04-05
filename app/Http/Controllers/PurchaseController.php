@@ -36,7 +36,7 @@ class PurchaseController extends Controller
         }
 
         $purchase = Purchase::create([
-            'purchase_code' => 'ACH-' . date('Ymd-His'),
+            'purchase_code' => 'ACH-' . now()->format('Ymd-His'),       
             'supplier_id' => $request->supplier_id,
             'purchase_date' => $request->purchase_date,
             'status' => $request->status,

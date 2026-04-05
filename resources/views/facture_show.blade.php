@@ -246,7 +246,8 @@
         </div>
 
         <div class="text-center mt-4">
-            <a href="{{ route('factures.index') }}" class="btn btn-secondary btn-lg px-4 me-2">
+            <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('factures.index') }}" class="btn btn-secondary btn-lg px-4 me-2">
+                
                 <i class="fas fa-arrow-left"></i> Retour
             </a>
 
