@@ -18,13 +18,25 @@ class StockMovement extends Model
     {
         return $this->belongsTo(Product::class);
     }
-    public function facture()
-{
-    return $this->belongsTo(Facture::class, 'reference', 'code_facture');
-}
+  
+
+
 
 public function purchase()
 {
-    return $this->belongsTo(\App\Models\Purchase::class, 'reference', 'purchase_code');
+    return $this->belongsTo(\App\Models\Purchase::class, 'reference', 'purchase_code')->withTrashed();
 }
+
+
+public function facture()
+{
+    return $this->belongsTo(Facture::class, 'reference', 'code_facture')->withTrashed();
 }
+
+
+
+
+}
+
+
+

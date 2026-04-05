@@ -108,6 +108,18 @@
                 {{ session('error') }}
             </div>
         @endif
+        @if ($facture->status == 'annulée')
+            <div class="alert alert-dark border-0 shadow-sm rounded-4">
+                <i class="fas fa-ban me-2"></i>
+                Cette facture est annulée. Elle n’est plus prise en compte dans le stock, les ventes et les rapports.
+            </div>
+        @endif
+
+        @if($facture->trashed())
+    <div class="alert alert-danger border-0 shadow-sm rounded-4">
+        Cette facture a été supprimée, mais reste visible dans les archives.
+    </div>
+@endif
 
         <div class="row mb-4 p-3 shadow-sm rounded" style="background:#f8f9fa;">
 
@@ -128,10 +140,14 @@
 
                 <div class="form-control readonly-input border-0 bg-transparent text-center">
 
+
+
                     @if ($facture->status == 'payée')
                         <span class="badge bg-success px-3 py-2">✔ Payée</span>
                     @elseif($facture->status == 'partiellement payée')
                         <span class="badge bg-warning text-dark px-3 py-2">⏳ Partielle</span>
+                    @elseif($facture->status == 'annulée')
+                        <span class="badge bg-dark px-3 py-2">✖ Annulée</span>
                     @else
                         <span class="badge bg-danger px-3 py-2">✖ Non payée</span>
                     @endif
@@ -243,13 +259,18 @@
                     <i class="fas fa-money-bill-wave"></i> Déjà payée
                 </button>
             @else
-                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal"
-                    data-bs-target="#paymentModal">
-                    <i class="fas fa-money-bill-wave"></i> Ajouter Paiement
-                </button>
+            @if(!$facture->trashed())
+                @if ($facture->status != 'annulée')
+                    <button type="button" class="btn btn-success me-2" data-bs-toggle="modal"
+                        data-bs-target="#paymentModal">
+                        <i class="fas fa-money-bill-wave"></i> Ajouter Paiement
+                    </button>
+                @endif
+                @endif
             @endif
         </div>
     </div>
+    @if ($facture->status != 'annulée')
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -294,6 +315,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     @php
         $formattedDate = \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y');

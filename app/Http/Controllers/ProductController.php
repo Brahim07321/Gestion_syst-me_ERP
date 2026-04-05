@@ -49,7 +49,7 @@ class ProductController extends Controller
     
         Product::create($formFields);
     
-        return redirect()->back()->with('message', 'Product created successfully');
+        return redirect()->back()->with('success', 'Product created successfully');
     }
 
     
@@ -93,62 +93,80 @@ class ProductController extends Controller
     }
 
 
+
     public function update(Request $request, $id)
-    {
-        $request->validate([
-            'Category_ID' => 'required',
-            'Referonce' => 'required',
-            'Designation' => 'required',
-            'code' => 'required',
-            'Quantite' => 'required|integer',
-            'prace_bay' => 'required|numeric',
-            'prace_sell' => 'required|numeric',
-        ]);
-    
-        $product = Product::findOrFail($id);
-    
-        $product->update([
-            'Category_ID' => $request->Category_ID,
-            'Referonce' => $request->Referonce,
-            'Designation' => $request->Designation,
-            'code' => $request->code,
-            'Quantite' => $request->Quantite,
-            'prace_bay' => $request->prace_bay,
-            'prace_sell' => $request->prace_sell,
-        ]);
-    
-        return redirect()->back()->with('message', 'Produit modifié avec succès');
-    }
+{
+    $product = Product::findOrFail($id);
+
+    $formFields = $request->validate([
+        'Category_ID' => 'required',
+        'code' => 'required',
+        'Referonce' => 'required|unique:products,Referonce,' . $id,
+        'Designation' => 'required',
+        'prace_bay' => 'required|numeric',
+        'prace_sell' => 'required|numeric',
+        'Quantite' => 'required|integer',
+    ], [
+        'Referonce.unique' => 'La référence que vous avez saisie est déjà utilisée. Merci de choisir une référence unique.',
+    ]);
+
+    $product->update($formFields);
+
+    return redirect()->back()->with('success', 'Produit modifié avec succès.');
+}
 
 
     public function destroy($id)
+
 {
+    if (auth()->user()->role !== 'admin') {
+        return back()->with('error', 'Accès refusé.');
+    }
     $product = Product::findOrFail($id);
     $product->delete();
 
-    return redirect()->back()->with('message', 'Produit supprimé avec succès');
+    return redirect()->back()->with('success', 'Produit supprimé avec succès');
 }
 
-//eort excil
+//exprt excil
 public function export(Request $request)
 {
     return Excel::download(new ProductsExport($request), 'stock.xlsx');
 }
 
 //imper fix excil
+
 public function import(Request $request)
 {
-   
+    // ✅ validation
     $request->validate([
         'file' => 'required|file|mimes:xlsx,xls'
+    ], [
+        'file.required' => 'Veuillez sélectionner un fichier.',
+        'file.mimes' => 'Le fichier doit être au format Excel (.xlsx, .xls).'
     ]);
 
-    Excel::import(new ProductsImport, $request->file('file'));
+    try {
+        Excel::import(new ProductsImport, $request->file('file'));
 
-    return back()->with('success', 'Import réussi 🔥');
+        // ✅ SUCCESS
+        return back()->with('success', 'Le fichier Excel a été importé avec succès.');
+
+    } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+
+        // ⚠️ WARNING (lignes فيها errors)
+        return back()->with('warning', 'Certaines lignes contiennent des erreurs et n’ont pas été importées.');
+
+    } catch (\Exception $e) {
+
+        // ❌ ERROR (مشكل عام)
+        Log::error($e);
+
+        return back()->with('error', 'Une erreur est survenue أثناء l’importation.');
+    }
 }
 
-///for dowload templet exile
+///for dowload templet exile    
 
 public function downloadTemplate()
 {

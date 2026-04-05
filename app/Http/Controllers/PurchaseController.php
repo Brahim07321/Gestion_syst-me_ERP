@@ -9,9 +9,15 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Category;
 use App\Models\StockMovement;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PurchasesExport;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseController extends Controller
 {
+    use SoftDeletes;
+
     public function store(Request $request)
     {
         $request->validate([
@@ -70,7 +76,7 @@ class PurchaseController extends Controller
             }
         }
 
-        return redirect()->route('purchases.index')
+        return redirect()->route('purchases.create')
             ->with('success', 'Achat ajouté avec succès');
     }
 
@@ -87,6 +93,8 @@ class PurchaseController extends Controller
     {
         $search = strtolower($request->search ?? '');
         $status = $request->status ?? '';
+        $suppliers = Supplier::orderBy('name')->get();
+
 
         $purchases = Purchase::with('supplier')
             ->when($search, function ($query) use ($search) {
@@ -103,13 +111,15 @@ class PurchaseController extends Controller
             ->latest()
             ->paginate(15);
 
-        return view('purchases.index', compact('purchases'));
+        return view('purchases.index', compact('purchases', 'suppliers'));
     }
 
     public function show($id)
     {
-        $purchase = Purchase::with(['supplier', 'items.product'])->findOrFail($id);
-
+   $purchase = Purchase::withTrashed()
+        ->with(['items.product', 'supplier'])
+        ->findOrFail($id);
+        
         return view('purchases.show', compact('purchase'));
     }
 
@@ -174,6 +184,9 @@ public function cancel($id)
  public function destroy($id)
 
     {
+        if (auth()->user()->role !== 'admin') {
+            return redirect()->back()->with('error', 'Accès refusé. Seul l’administrateur peut supprimer un achat.');
+        }
         $purchase = Purchase::with('items.product')->findOrFail($id);
 
         // إلا كان reçu نقص stock
@@ -199,4 +212,71 @@ public function cancel($id)
 
         return back()->with('success', 'Achat supprimé');
     }
+
+    public function exportExcel(Request $request)
+{
+    return Excel::download(new PurchasesExport($request), 'liste_achats.xlsx');
+}
+
+public function exportPdf(Request $request)
+{
+    $search = strtolower($request->search ?? '');
+    $status = $request->status ?? '';
+
+    $purchases = Purchase::with('supplier')
+        ->when($search, function ($query) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(purchase_code) LIKE ?', ["%{$search}%"])
+                  ->orWhereHas('supplier', function ($supplierQuery) use ($search) {
+                      $supplierQuery->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                  });
+            });
+        })
+        ->when($status, function ($query) use ($status) {
+            $query->where('status', $status);
+        })
+        ->latest()
+        ->get();
+
+    $pdf = Pdf::loadView('purchases.pdf', compact('purchases', 'search', 'status'))
+        ->setPaper('A4', 'landscape');
+
+    return $pdf->download('liste_achats.pdf');
+}
+
+public function markAsReceived($id)
+{
+    $purchase = Purchase::with('items')->findOrFail($id);
+
+    // إلا كانت ديجا reçu
+    if ($purchase->status === 'reçu') {
+        return redirect()->back()->with('error', 'Cet achat est déjà marqué comme reçu.');
+    }
+
+    // إلا كانت annuléة
+    if ($purchase->status === 'annulé') {
+        return redirect()->back()->with('error', 'Impossible de recevoir un achat annulé.');
+    }
+
+    foreach ($purchase->items as $item) {
+        $product = Product::find($item->product_id);
+
+        if ($product) {
+            $product->increment('Quantite', $item->quantity);
+
+            StockMovement::create([
+                'product_id' => $product->id,
+                'type' => 'entree',
+                'quantity' => $item->quantity,
+                'source' => 'achat',
+                'reference' => $purchase->purchase_code,
+            ]);
+        }
+    }
+
+    $purchase->status = 'reçu';
+    $purchase->save();
+
+    return redirect()->back()->with('success', 'Achat marqué comme reçu avec succès.');
+}
 }

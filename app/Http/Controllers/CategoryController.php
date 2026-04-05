@@ -14,6 +14,9 @@ class CategoryController extends Controller
 
     public function CreateCategory(Request $request)
     {
+        if (auth()->user()->role !== 'admin') {
+            return back()->with('error', 'Accès refusé.');
+        }
         // Validate input
         $formFields = $request->validate([
             'Category' => 'required|string|max:255', // Add constraints for better validation
@@ -38,7 +41,17 @@ class CategoryController extends Controller
     
         return view('Category', compact('Categorys', 'search'));
     }
+//delet 
+public function destroy($id)
+{
+    if (auth()->user()->role !== 'admin') {
+        return back()->with('error', 'Accès refusé.');
+    }
+    $category = Category::findOrFail($id);
+    $category->delete();
 
+    return back()->with('success', 'Catégorie supprimée avec succès.');
+}
 
    
 }

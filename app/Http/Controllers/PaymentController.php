@@ -16,11 +16,21 @@ class PaymentController extends Controller
             'note' => 'nullable|string|max:255',
         ]);
     
-        $facture = Facture::findOrFail($id);
-    
-        if ($facture->status === 'payée') {
-            return redirect()->back()->with('error', 'Cette facture est déjà payée.');
-        }
+
+
+        $facture = Facture::withTrashed()->findOrFail($id);
+
+if ($facture->trashed() || $facture->status === 'annulée') {
+    return back()->with('error', 'Impossible d’ajouter un paiement à cette facture.');
+}
+
+if ($facture->status === 'annulée') {
+    return redirect()->back()->with('error', 'Cette facture est annulée. Aucun paiement ne peut être ajouté.');
+}
+
+if ($facture->status === 'payée') {
+    return redirect()->back()->with('error', 'Cette facture est déjà payée.');
+}
     
         $alreadyPaid = $facture->payments()->sum('amount');
         $remaining = $facture->total - $alreadyPaid;

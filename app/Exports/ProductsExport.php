@@ -6,8 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithCustomStartCell;
+use Maatwebsite\Excel\Events\AfterSheet;
 
-class ProductsExport implements FromCollection, WithHeadings
+class ProductsExport implements FromCollection, WithHeadings, WithEvents, WithCustomStartCell
 {
     protected $request;
 
@@ -27,7 +30,7 @@ class ProductsExport implements FromCollection, WithHeadings
                 'products.id',
                 'products.Referonce',
                 'products.code',
-                'categories.Category as category_name', // ولا category إذا عندك صغيرة
+                'categories.Category as category_name',
                 'products.Designation',
                 'products.prace_bay',
                 'products.prace_sell',
@@ -49,6 +52,12 @@ class ProductsExport implements FromCollection, WithHeadings
             ->get();
     }
 
+    // باش نخليو العنوان فوق
+    public function startCell(): string
+    {
+        return 'A3';
+    }
+
     public function headings(): array
     {
         return [
@@ -60,6 +69,78 @@ class ProductsExport implements FromCollection, WithHeadings
             'Prix Achat',
             'Prix Vente',
             'Quantité',
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function ($event) {
+
+                // ======================
+                // 🎯 TITRE
+                // ======================
+                $event->sheet->setCellValue('A1', 'Liste des Produits');
+                $event->sheet->mergeCells('A1:H1');
+
+                $event->sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+                $event->sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+                // ======================
+                // 🎨 HEADINGS STYLE
+                // ======================
+                $event->sheet->getStyle('A3:H3')->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => 'FFFFFF'],
+                        'size' => 11,
+                    ],
+                    'fill' => [
+                        'fillType' => 'solid',
+                        'startColor' => ['rgb' => '059669'], // vert جميل
+                    ],
+                    'alignment' => [
+                        'horizontal' => 'center',
+                    ],
+                ]);
+
+                // ======================
+                // 📦 TABLE STYLE
+                // ======================
+                $lastRow = $event->sheet->getHighestRow();
+
+                $event->sheet->getStyle("A3:H$lastRow")->applyFromArray([
+                    'borders' => [
+                
+                        // 🧱 borders داخلية
+                        'inside' => [
+                            'borderStyle' => 'medium',
+                            'color' => ['rgb' => '000000'],
+                        ],
+                
+                        // 🔳 border خارجية قوية
+                        'outline' => [
+                            'borderStyle' => 'medium',
+                            'color' => ['rgb' => '000000'],
+                        ],
+                    ],
+                ]);
+
+                // ======================
+                // 📏 AUTO SIZE
+                // ======================
+                foreach (range('A', 'H') as $column) {
+                    $event->sheet->getColumnDimension($column)->setAutoSize(true);
+                }
+
+                // ======================
+                // 🎯 ALIGNMENT
+                // ======================
+                $event->sheet->getStyle("A3:H$lastRow")
+                    ->getAlignment()
+                    ->setVertical('center')
+                    ->setHorizontal('center');
+            },
         ];
     }
 }

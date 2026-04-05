@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class Facture extends Model
 {
+
+    use SoftDeletes;
+
     protected $fillable = [
         'code_facture',
         'client_name',
@@ -35,5 +40,9 @@ public function getRemainingToPayAttribute()
 {
     return $this->total - $this->total_paid;
 }
+
+
+
+
 
 }

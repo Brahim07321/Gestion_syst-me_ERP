@@ -44,6 +44,9 @@ class ExpenseController extends Controller
 
     public function destroy($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            return back()->with('error', 'Accès refusé.');
+        }
         $expense = Expense::findOrFail($id);
         $expense->delete();
 
