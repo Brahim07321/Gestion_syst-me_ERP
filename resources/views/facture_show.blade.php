@@ -115,11 +115,11 @@
             </div>
         @endif
 
-        @if($facture->trashed())
-    <div class="alert alert-danger border-0 shadow-sm rounded-4">
-        Cette facture a été supprimée, mais reste visible dans les archives.
-    </div>
-@endif
+        @if ($facture->trashed())
+            <div class="alert alert-danger border-0 shadow-sm rounded-4">
+                Cette facture a été supprimée, mais reste visible dans les archives.
+            </div>
+        @endif
 
         <div class="row mb-4 p-3 shadow-sm rounded" style="background:#f8f9fa;">
 
@@ -128,6 +128,8 @@
                 <input type="text" class="form-control readonly-input border-0 bg-transparent fw-bold"
                     value="{{ $facture->client_name }}" readonly>
             </div>
+            
+            
 
             <div class="col-md-3 border-end">
                 <label class="text-muted small">Date Facture</label>
@@ -246,8 +248,9 @@
         </div>
 
         <div class="text-center mt-4">
-            <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('factures.index') }}" class="btn btn-secondary btn-lg px-4 me-2">
-                
+            <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('factures.index') }}"
+                class="btn btn-secondary btn-lg px-4 me-2">
+
                 <i class="fas fa-arrow-left"></i> Retour
             </a>
 
@@ -260,141 +263,185 @@
                     <i class="fas fa-money-bill-wave"></i> Déjà payée
                 </button>
             @else
-            @if(!$facture->trashed())
-                @if ($facture->status != 'annulée')
-                    <button type="button" class="btn btn-success me-2" data-bs-toggle="modal"
-                        data-bs-target="#paymentModal">
-                        <i class="fas fa-money-bill-wave"></i> Ajouter Paiement
-                    </button>
-                @endif
+                @if (!$facture->trashed())
+                    @if ($facture->status != 'annulée')
+                        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal"
+                            data-bs-target="#paymentModal">
+                            <i class="fas fa-money-bill-wave"></i> Ajouter Paiement
+                        </button>
+                    @endif
                 @endif
             @endif
         </div>
     </div>
     @if ($facture->status != 'annulée')
-    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="POST" action="{{ route('payments.store', $facture->id) }}">
-                    @csrf
+        <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ route('payments.store', $facture->id) }}">
+                        @csrf
 
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="paymentModalLabel">Ajouter un Paiement</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label>Montant</label>
-                            <input type="number" step="0.01" min="0.01" name="amount" class="form-control"
-                                required>
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="paymentModalLabel">Ajouter un Paiement</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
 
-                        <div class="mb-3">
-                            <label>Date Paiement</label>
-                            <input type="date" name="payment_date" class="form-control"
-                                value="{{ date('Y-m-d') }}" required>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label>Montant</label>
+                                <input type="number" step="0.01" min="0.01" name="amount"
+                                    class="form-control" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label>Date Paiement</label>
+                                <input type="date" name="payment_date" class="form-control"
+                                    value="{{ date('Y-m-d') }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label>Note</label>
+                                <input type="text" name="note" class="form-control" placeholder="Optionnel">
+                            </div>
+
+                            <div class="alert alert-info">
+                                <strong>Reste à payer:</strong>
+                                {{ number_format($facture->remaining_amount ?? $facture->total - ($facture->paid_amount ?? 0), 2) }}
+                                MAD
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label>Note</label>
-                            <input type="text" name="note" class="form-control" placeholder="Optionnel">
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                            <button type="submit" class="btn btn-success">Enregistrer</button>
                         </div>
-
-                        <div class="alert alert-info">
-                            <strong>Reste à payer:</strong>
-                            {{ number_format($facture->remaining_amount ?? $facture->total - ($facture->paid_amount ?? 0), 2) }}
-                            MAD
-                        </div>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                        <button type="submit" class="btn btn-success">Enregistrer</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
     @endif
 
     @php
         $formattedDate = \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y');
     @endphp
     <script>
-        document.getElementById('save-pdf').addEventListener('click', function() {
-            const {
-                jsPDF
-            } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
+     document.getElementById('save-pdf').addEventListener('click', function () {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
 
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-            const invoiceNumber = document.getElementById('invoice_number').textContent.trim() || 'BL-0001';
-            const invoiceDate = @json($formattedDate);
+    const invoiceNumber = @json($facture->code_facture);
+    const invoiceDate = @json($formattedDate);
+    const customerName = @json($facture->client_name);
 
-            const customerName = @json($facture->client_name);
-            const grandTotal = document.getElementById('grand-total').textContent || '0.00';
+    const customerAddress = @json($customer->address ?? '');
+    const grandTotal = @json($facture->total);
 
-            const logoUrl = '{{ asset('images/img.png') }}';
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = logoUrl;
+    const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.png'));
+    const companyName = @json($company->company_name ?? '');
+    const companyCity = @json($company->city ?? '');
+    const companyAddress = @json($company->address ?? '');
+    const companyPhone = @json($company->phone ?? '');
+    const companyEmail = @json($company->email ?? '');
+    const footerNote = @json($company->footer_note ?? '');
+    const footerContact = @json($company->footer_contact ?? '');
 
-            img.onload = function() {
-                const logoWidth = 85;
-                const logoHeight = 28;
-                const logoX = (pageWidth - logoWidth) / 2;
-                const logoY = 8;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = logoUrl;
 
-                doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    img.onload = function () {
 
-                doc.setDrawColor(120, 120, 120);
-                doc.setLineWidth(0.3);
-                doc.line(12, 40, pageWidth - 12, 40);
+        // =========================
+        // LOGO
+        // =========================
+        doc.addImage(img, 'PNG', (pageWidth - 85) / 2, 8, 85, 28);
+
+        // =========================
+        // NOM SOCIETE
+        // =========================
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(70, 85, 110);
+        doc.text(companyName.toUpperCase(), pageWidth / 2, 42, { align: 'center' });
+
+        doc.setDrawColor(0, 102, 204);
+        doc.setLineWidth(0.4);
+        doc.line(65, 46, pageWidth - 65, 46);
+
+
+
+        // =========================
+        // HEADER
+        // =========================
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+
+        doc.setFont('helvetica', 'bold');
+
+  
+        doc.text(`BON DE LIVRAISON N° ${invoiceNumber}`, 12, 56);
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${companyCity}, le : ${invoiceDate}`, pageWidth - 17, 54, { align: 'right' });
+
+        // =========================
+        // CLIENT BOX (صغيرة و زوينة)
+        // =========================
+  
+
+
+        doc.setDrawColor(170, 170, 170);
+                doc.setLineWidth(0.25);
+                doc.roundedRect(120, 58, 72, 24, 3, 3);
 
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
-                doc.text(`BON DE LIVRAISON N° ${invoiceNumber}`, 12, 48);
+                doc.setFontSize(9);
+                doc.setTextColor(90, 100, 125);
+                doc.text('CLIENT :', 126, 64);
 
-                doc.text(`Marrakech, le : ${invoiceDate}`, pageWidth - 17, 44, {
-                    align: 'right'
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.text(customerName.toUpperCase(), 150, 64, {
+                    align: 'center',
+                    maxWidth: 60
                 });
 
-                doc.rect(122, 46, 70, 20);
-                doc.text(String(customerName).toUpperCase(), 157, 60, {
-                    align: 'center'
-                });
+                if (customerAddress) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
 
-                const rows = [];
-                document.querySelectorAll('#items-list tr').forEach(row => {
-                    const referonce = row.querySelector('.product-reference')?.textContent?.trim() ||
-                        '';
-                    const designation = row.querySelector('.product-designation')?.textContent
-                        ?.trim() || '';
-                    const quantity = row.querySelector('.product-quantity')?.textContent?.trim() || '1';
-                    const price = row.querySelector('.product-price')?.textContent?.trim() || '0.00';
-                    const total = row.querySelector('.product-total')?.textContent?.trim() || '0.00';
-
-                    if (referonce || designation) {
-                        rows.push([
-                            referonce,
-                            designation,
-                            quantity.replace('.', ','),
-                            price.replace('.', ','),
-                            total.replace('.', ',')
-                        ]);
-                    }
-                });
-
-                const minRows = 15;
-                while (rows.length < minRows) {
-                    rows.push(['', '', '', '', '']);
+                    const addressLines = doc.splitTextToSize(customerAddress, 56);
+                    doc.text(addressLines, 150, 74, {
+                        align: 'center',
+                        maxWidth: 56
+                    });
                 }
 
-                doc.autoTable({
-                    startY: 70,
+        // =========================
+        // TABLE DATA
+        // =========================
+        const rows = [];
+
+        @foreach($facture->items as $item)
+            rows.push([
+                "{{ $item->referonce }}",
+                "{{ $item->designation }}",
+                "{{ $item->quantity }}",
+                "{{ number_format($item->price, 2, ',', '') }}",
+                "{{ number_format($item->line_total, 2, ',', '') }}"
+            ]);
+        @endforeach
+
+        while (rows.length < 15) {
+            rows.push(['', '', '', '', '']);
+        }
+
+        doc.autoTable({
+                    startY: 86,
                     head: [
                         [
                             'Référence',
@@ -410,7 +457,7 @@
                         font: 'helvetica',
                         fontSize: 9,
                         textColor: [0, 0, 0],
-                        cellPadding: 2,
+                        cellPadding: 3,
                         overflow: 'linebreak',
                         valign: 'middle',
                         lineWidth: 0
@@ -418,7 +465,7 @@
                     headStyles: {
                         fontStyle: 'bold',
                         halign: 'center',
-                        textColor: [0, 0, 0],
+                        textColor: [70, 85, 110],
                         fillColor: false,
                         lineWidth: 0
                     },
@@ -452,16 +499,15 @@
                         const x = data.settings.margin.left;
                         const y = data.settings.startY;
                         const tableWidth = 180;
-                        const rowHeight = 8;
+                        const rowHeight = 9;
+                        const totalHeight = rowHeight * (rows.length + 1);
 
-                        doc.setDrawColor(120, 120, 120);
+                        // outer border
+                        doc.setDrawColor(170, 170, 170);
                         doc.setLineWidth(0.2);
-
-                        const bodyRowsCount = rows.length > 0 ? rows.length : 1;
-                        const totalHeight = rowHeight * (bodyRowsCount + 1);
-
                         doc.rect(x, y, tableWidth, totalHeight);
 
+                        // vertical lines only
                         const col1 = x + 28;
                         const col2 = x + 108;
                         const col3 = x + 130;
@@ -472,72 +518,57 @@
                         doc.line(col3, y, col3, y + totalHeight);
                         doc.line(col4, y, col4, y + totalHeight);
 
+                        // header separator only
                         doc.line(x, y + rowHeight, x + tableWidth, y + rowHeight);
                     }
                 });
 
-                const totalY = 200;
+        // =========================
+        // TOTAL
+        // =========================
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
 
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
+        doc.setFillColor(0, 102, 204);
+        doc.rect(142, 232, 28, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.text('TOTAL', 156, 238, { align: 'center' });
 
-                doc.setFillColor(0, 102, 204);
-                doc.rect(142, totalY, 28, 10, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.text('TOTAL', 156, totalY + 6.5, {
-                    align: 'center'
-                });
+        doc.setFillColor(255, 255, 255);
+        doc.setTextColor(0, 0, 0);
+        doc.rect(170, 232, 22, 10);
+        doc.text(String(grandTotal).replace('.', ','), 190, 238, { align: 'right' });
 
-                doc.setFillColor(255, 255, 255);
-                doc.setTextColor(0, 0, 0);
-                doc.rect(170, totalY, 22, 10);
-                doc.text(String(grandTotal).replace('.', ','), 190, totalY + 6.5, {
-                    align: 'right'
-                });
+        // =========================
+        // FOOTER
+        // =========================
+        let footerY = pageHeight - 22;
 
-                let footerY = pageHeight - 24;
+        doc.setDrawColor(200, 200, 200);
+        doc.line(12, footerY - 6, pageWidth - 12, footerY - 6);
 
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
-                doc.text(
-                    "LES TURBOCHARGEURS, LES PIÈCES ÉLECTRONIQUES ET HYDRAULIQUES NE SONT PAS COUVERTS PAR LA",
-                    pageWidth / 2,
-                    footerY, {
-                        align: 'center'
-                    }
-                );
-                doc.text(
-                    "GARANTIE AUCUN RETOUR OU AVOIR N'EST ACCEPTÉ",
-                    pageWidth / 2,
-                    footerY + 4, {
-                        align: 'center'
-                    }
-                );
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(90, 90, 90);
+        doc.text(footerNote, pageWidth / 2, footerY - 1, { align: 'center', maxWidth: 180 });
 
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
-                doc.text(
-                    "Siège Social : 14 Magasin 1 Lot Taisir Quartier Sidi Ghanem - Marrakech",
-                    pageWidth / 2,
-                    footerY + 10, {
-                        align: 'center'
-                    }
-                );
-                doc.text(
-                    "Tél. : 0524 33 65 14 / 06 61 28 44 87 - E-mail : italopieces2015@gmail.com",
-                    pageWidth / 2,
-                    footerY + 14, {
-                        align: 'center'
-                    }
-                );
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
 
-                doc.save(`facture_${invoiceNumber}.pdf`);
-            };
+        if (companyAddress) {
+            doc.text(companyAddress, pageWidth / 2, footerY + 7, { align: 'center' });
+        }
 
-            img.onerror = function() {
-                alert("Erreur lors du chargement du logo.");
-            };
-        });
+        doc.text(
+            footerContact || `${companyPhone} - ${companyEmail}`,
+            pageWidth / 2,
+            footerY + 12,
+            { align: 'center' }
+        );
+
+        doc.save(`facture_${invoiceNumber}.pdf`);
+    };
+});
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

@@ -109,7 +109,8 @@
         </datalist> <!-- Datalist Clients -->
         <datalist id="customers-list">
             @foreach ($customers as $customer)
-                <option value="{{ $customer->name }}" data-id="{{ $customer->id }}">
+                <option value="{{ $customer->name }}" data-id="{{ $customer->id }}"
+                    data-address="{{ $customer->address ?? '' }}">
                 </option>
             @endforeach
         </datalist>
@@ -141,13 +142,9 @@
 
             <div class="mb-4">
                 <label for="invoice_number">Numéro Facture</label>
-                <input
-                type="text"
-                name="invoice_number"
-                id="invoice_number"
-                class="form-control"
-                value="{{ old('invoice_number') }}"
-                placeholder="Laisser vide pour génération automatique">            </div>
+                <input type="text" name="invoice_number" id="invoice_number" class="form-control"
+                    value="{{ old('invoice_number') }}" placeholder="Laisser vide pour génération automatique">
+            </div>
 
             <h3 class="mb-3">Articles</h3>
 
@@ -206,10 +203,11 @@
             </div>
 
             <!-- 🔥 status -->
-         
+
             <div class="col-md-4">
                 <label>Montant payé</label>
-                <input type="number" name="paid_amount" class="form-control" step="0.01" min="0" value="0">
+                <input type="number" name="paid_amount" class="form-control" step="0.01" min="0"
+                    value="0">
             </div>
 
             <div class="text-center mt-4">
@@ -285,7 +283,8 @@
                 for (let opt of options) {
                     if (opt.value === name) {
                         return {
-                            id: opt.dataset.id
+                            id: opt.dataset.id,
+                            address: opt.dataset.address || ''
                         };
                     }
                 }
@@ -298,14 +297,17 @@
             // =========================
             const customerSearch = document.getElementById('customer_search');
             const customerId = document.getElementById('customer_id');
+            const customerAddress = document.getElementById('customer_address');
 
             customerSearch.addEventListener('input', function() {
                 const client = getClient(this.value);
 
                 if (client) {
                     customerId.value = client.id;
+                    customerAddress.value = client.address;
                 } else {
                     customerId.value = '';
+                    customerAddress.value = '';
                 }
             });
 
@@ -449,23 +451,60 @@
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
 
-            const invoiceNumber = document.getElementById('invoice_number').value || 'BL-0001';
+            let invoiceNumber = document.getElementById('invoice_number').value;
+
+            if (!invoiceNumber) {
+                invoiceNumber = 'INV-' + new Date().toISOString().slice(0, 19).replace(/[-T:]/g, '');
+            }
             const rawDate = document.getElementById('invoice_date').value;
 
             const invoiceDate = rawDate ?
                 new Date(rawDate).toLocaleDateString('fr-FR') :
                 '';
-            const customerName = document.getElementById('customer_search').value || 'Client';
+
+            const customerValue = document.getElementById('customer_search').value || 'Client';
+
+            function getClientData(name) {
+                const options = document.querySelectorAll('#customers-list option');
+
+                for (let opt of options) {
+                    if (opt.value === name) {
+                        return {
+                            name: opt.value,
+                            address: opt.dataset.address || ''
+                        };
+                    }
+                }
+
+                return {
+                    name: name || 'Client',
+                    address: ''
+                };
+            }
+
+            const clientData = getClientData(customerValue);
+            const customerName = clientData.name;
+            const customerAddress = clientData.address;
             const grandTotal = document.getElementById('grand-total').textContent || '0.00';
 
-            const logoUrl = '{{ asset('images/img.png') }}';
+            const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.png'));
+            const companyCity = @json($company->city ?? 'Marrakech');
+            const companyName = @json($company->company_name ?? '');
+            const companyAddress = @json($company->address ?? '');
+            const companyPhone = @json($company->phone ?? '');
+            const companyEmail = @json($company->email ?? '');
+            const footerNote = @json(
+                $company->footer_note ??
+                    "LES TURBOCHARGEURS, LES PIÈCES ÉLECTRONIQUES ET HYDRAULIQUES NE SONT PAS COUVERTS PAR LA GARANTIE AUCUN RETOUR OU AVOIR N'EST ACCEPTÉ");
+            const footerContact = @json($company->footer_contact ?? '');
+
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.src = logoUrl;
 
             img.onload = function() {
                 // =========================
-                // LOGO CENTER TOP
+                // LOGO
                 // =========================
                 const logoWidth = 85;
                 const logoHeight = 28;
@@ -474,28 +513,68 @@
 
                 doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
 
-                // line under logo
-                doc.setDrawColor(120, 120, 120);
-                doc.setLineWidth(0.3);
-                doc.line(12, 40, pageWidth - 12, 40);
+                // =========================
+                // NOM SOCIETE
+                // =========================
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.setTextColor(70, 85, 110);
+                doc.text(companyName.toUpperCase(), pageWidth / 2, 42, {
+                    align: 'center'
+                });
+
+                doc.setDrawColor(0, 102, 204);
+                doc.setLineWidth(0.4);
+                doc.line(65, 46, pageWidth - 65, 46);
 
                 // =========================
                 // HEADER INFOS
                 // =========================
+                doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
-                doc.text(`BON DE LIVRAISON N° ${invoiceNumber}`, 12, 48);
-                doc.text(`BON DE COMMANDE N°`, 12, 55);
 
-                doc.text(`Marrakech, le : ${invoiceDate}`, pageWidth - 17, 44, {
+                // ✅ numéro facture بحال الأول
+                doc.text(`BON DE LIVRAISON N° ${invoiceNumber}`, 12, 56);
+
+                // ✅ date فوق box client وعلى اليمين
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text(`${companyCity}, le : ${invoiceDate}`, pageWidth - 17, 54, {
                     align: 'right'
                 });
 
-                // Client box
-                doc.rect(122, 46, 70, 20);
-                doc.text(customerName.toUpperCase(), 157, 60, {
-                    align: 'center'
+                // =========================
+                // CLIENT BOX
+                // =========================
+                doc.setDrawColor(170, 170, 170);
+                doc.setLineWidth(0.25);
+                doc.roundedRect(120, 58, 72, 24, 3, 3);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setTextColor(90, 100, 125);
+                doc.text('CLIENT :', 126, 64);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.text(customerName.toUpperCase(), 150, 64, {
+                    align: 'center',
+                    maxWidth: 60
                 });
+
+                if (customerAddress) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+
+                    const addressLines = doc.splitTextToSize(customerAddress, 56);
+                    doc.text(addressLines, 150, 74, {
+                        align: 'center',
+                        maxWidth: 56
+                    });
+                }
+
                 // =========================
                 // TABLE DATA
                 // =========================
@@ -518,20 +597,16 @@
                     }
                 });
 
-                // 🔥 عدد السطور اللي بغينا فالتابلو (باش يبان طويل)
                 const minRows = 15;
-
-                // نزيدو rows خاويين حتى يوصل للارتفاع المطلوب
                 while (rows.length < minRows) {
                     rows.push(['', '', '', '', '']);
                 }
 
                 // =========================
-                // TABLE 80% PAGE STYLE
-                // no horizontal lines between products
+                // TABLE CLEAN
                 // =========================
                 doc.autoTable({
-                    startY: 70,
+                    startY: 86,
                     head: [
                         [
                             'Référence',
@@ -547,7 +622,7 @@
                         font: 'helvetica',
                         fontSize: 9,
                         textColor: [0, 0, 0],
-                        cellPadding: 2,
+                        cellPadding: 3,
                         overflow: 'linebreak',
                         valign: 'middle',
                         lineWidth: 0
@@ -555,7 +630,7 @@
                     headStyles: {
                         fontStyle: 'bold',
                         halign: 'center',
-                        textColor: [0, 0, 0],
+                        textColor: [70, 85, 110],
                         fillColor: false,
                         lineWidth: 0
                     },
@@ -588,16 +663,13 @@
                     didDrawPage: function(data) {
                         const x = data.settings.margin.left;
                         const y = data.settings.startY;
-                        const tableWidth = 180; // حوالي 80%+ من العرض
-                        const rowHeight = 8;
+                        const tableWidth = 180;
+                        const rowHeight = 9;
+                        const totalHeight = rowHeight * (rows.length + 1);
 
                         // outer border
-                        doc.setDrawColor(120, 120, 120);
+                        doc.setDrawColor(170, 170, 170);
                         doc.setLineWidth(0.2);
-
-                        const bodyRowsCount = rows.length > 0 ? rows.length : 1;
-                        const totalHeight = rowHeight * (bodyRowsCount + 1);
-
                         doc.rect(x, y, tableWidth, totalHeight);
 
                         // vertical lines only
@@ -611,7 +683,7 @@
                         doc.line(col3, y, col3, y + totalHeight);
                         doc.line(col4, y, col4, y + totalHeight);
 
-                        // only header separator
+                        // header separator only
                         doc.line(x, y + rowHeight, x + tableWidth, y + rowHeight);
                     }
                 });
@@ -619,7 +691,7 @@
                 // =========================
                 // TOTAL BOX
                 // =========================
-                const totalY = 200;
+                const totalY = 232;
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
@@ -638,42 +710,49 @@
                     align: 'right'
                 });
 
-                // =========================        
-                //FOOTER
                 // =========================
-                let footerY = pageHeight - 24;
+                // FOOTER
+                // =========================
+                let footerY = pageHeight - 22;
+
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.2);
+                doc.line(12, footerY - 6, pageWidth - 12, footerY - 6);
 
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(8);
+                doc.setFontSize(7.5);
+                doc.setTextColor(90, 90, 90);
                 doc.text(
-                    "LES TURBOCHARGEURS, LES PIÈCES ÉLECTRONIQUES ET HYDRAULIQUES NE SONT PAS COUVERTS PAR LA",
+                    footerNote,
                     pageWidth / 2,
-                    footerY, {
-                        align: 'center'
-                    }
-                );
-                doc.text(
-                    "GARANTIE AUCUN RETOUR OU AVOIR N'EST ACCEPTÉ",
-                    pageWidth / 2,
-                    footerY + 4, {
-                        align: 'center'
+                    footerY - 1, {
+                        align: 'center',
+                        maxWidth: 180
                     }
                 );
 
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
+                doc.setFontSize(7.5);
+
+                // ✅ adresse société لتحت
+                if (companyAddress) {
+                    doc.text(
+                        companyAddress,
+                        pageWidth / 2,
+                        footerY + 7, {
+                            align: 'center',
+                            maxWidth: 180
+                        }
+                    );
+                }
+
                 doc.text(
-                    "Siège Social : 14 Magasin 1 Lot Taisir Quartier Sidi Ghanem - Marrakech",
+                    footerContact ||
+                    `${companyPhone ? 'Tél. : ' + companyPhone : ''}${companyEmail ? ' - E-mail : ' + companyEmail : ''}`,
                     pageWidth / 2,
-                    footerY + 10, {
-                        align: 'center'
-                    }
-                );
-                doc.text(
-                    "Tél. : 0524 33 65 14 / 06 61 28 44 87 - E-mail : italopieces2015@gmail.com",
-                    pageWidth / 2,
-                    footerY + 14, {
-                        align: 'center'
+                    footerY + 12, {
+                        align: 'center',
+                        maxWidth: 180
                     }
                 );
 

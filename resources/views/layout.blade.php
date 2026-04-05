@@ -334,6 +334,12 @@
                     <i class="fas fa-wallet"></i> Dépenses
                 </li>
             </a>
+
+            <a href="{{ route('settings.company.edit') }}">
+                <li class="{{ request()->routeIs('settings.company.*') ? 'active' : '' }}">
+                    <i class="fas fa-building"></i> Paramètres société
+                </li>
+            </a>
          
             @auth
     @if(Auth::user()->role === 'admin')

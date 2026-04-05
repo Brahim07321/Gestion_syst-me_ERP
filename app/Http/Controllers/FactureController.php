@@ -16,6 +16,7 @@ use App\Models\FactureItem;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\FacturesExport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\CompanySetting;
 
 
 class FactureController extends Controller
@@ -202,8 +203,11 @@ StockMovement::create([
     $facture = Facture::withTrashed()
     ->with(['items', 'payments'])
     ->findOrFail($id);
-        return view('facture_show', compact('facture'));
-}
+
+$customer = Customer::where('name', $facture->client_name)->first();
+$company = CompanySetting::first();
+
+return view('facture_show', compact('facture', 'customer', 'company'));}
 public function dashboard()
 {
     $facturesCount = Facture::count();

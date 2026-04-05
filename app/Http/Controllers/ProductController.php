@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TemplateExport;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\CompanySetting;
 
 // You need this for category model
 class ProductController extends Controller
@@ -87,11 +88,13 @@ class ProductController extends Controller
     {
         // Fetch products and customers
         $products = Product::all();
-        $customers = Customer::all(['id', 'name']); // Récupérer les clients avec leurs IDs et noms
+        $customers = Customer::all(['id', 'name', 'address']); // Récupérer les clients avec leurs IDs et noms
+        $company = CompanySetting::first();
 
-        // Pass the products and customers to the view
-        return view('facture', compact('products', 'customers'));
+        return view('facture', compact('products', 'customers', 'company'));
     }
+
+
 
 
 
@@ -180,7 +183,7 @@ public function import(Request $request)
         
         return back()->with('success', 'Le fichier Excel a été importé avec succès.');
 
-        
+
     } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
         return back()->with('warning', 'Certaines lignes contiennent des erreurs et n’ont pas été importées.');
 

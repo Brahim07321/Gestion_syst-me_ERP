@@ -41,6 +41,11 @@ public function getRemainingToPayAttribute()
     return $this->total - $this->total_paid;
 }
 
+public function customer()
+{
+    return $this->belongsTo(Customer::class);
+}
+
 
 
 

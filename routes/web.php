@@ -14,6 +14,9 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\PurchaseImportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CompanySettingController;
+
+
 
 
 // الصفحة الرئيسية
@@ -138,11 +141,20 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
     Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::delete('/expenses/{id}', [ExpenseController::class, 'destroy'])->middleware(['auth', 'admin'])->name('expenses.destroy');
+    // =========================
+    // setting
+    // =========================
 
+    Route::get('/settings/company', [CompanySettingController::class, 'edit'])->name('settings.company.edit');
+    Route::post('/settings/company', [CompanySettingController::class, 'update'])->name('settings.company.update');
     // =========================
     // REPORTS
     // =========================
     Route::get('/reports', [FactureController::class, 'report'])->name('reports');
+
+    Route::get('/profile', function () {
+        return redirect()->route('settings.company.edit');
+    })->name('profile.edit');
 });
 
 // auth routes
