@@ -128,8 +128,8 @@
                 <input type="text" class="form-control readonly-input border-0 bg-transparent fw-bold"
                     value="{{ $facture->client_name }}" readonly>
             </div>
-            
-            
+
+
 
             <div class="col-md-3 border-end">
                 <label class="text-muted small">Date Facture</label>
@@ -248,9 +248,13 @@
         </div>
 
         <div class="text-center mt-4">
-            <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('factures.index') }}"
-                class="btn btn-secondary btn-lg px-4 me-2">
 
+            @php
+                $previous = url()->previous();
+            @endphp
+
+            <a href="{{ $previous && !str_contains($previous, 'factures/') ? $previous : route('factures.index') }}"
+                class="btn btn-secondary btn-lg px-4 me-2">
                 <i class="fas fa-arrow-left"></i> Retour
             </a>
 
@@ -325,123 +329,145 @@
         $formattedDate = \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y');
     @endphp
     <script>
-     document.getElementById('save-pdf').addEventListener('click', function () {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
+        document.getElementById('save-pdf').addEventListener('click', function() {
+            const {
+                jsPDF
+            } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
 
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
 
-    const invoiceNumber = @json($facture->code_facture);
-    const invoiceDate = @json($formattedDate);
-    const customerName = @json($facture->client_name);
+            const invoiceNumber = @json($facture->code_facture);
+            const invoiceDate = @json($formattedDate);
+            const customerName = @json($facture->client_name);
 
-    const customerAddress = @json($customer->address ?? '');
-    const grandTotal = @json($facture->total);
+            const customerAddress = @json($customer->address ?? '');
+            const grandTotal = @json($facture->total);
 
-    const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.png'));
-    const companyName = @json($company->company_name ?? '');
-    const companyCity = @json($company->city ?? '');
-    const companyAddress = @json($company->address ?? '');
-    const companyPhone = @json($company->phone ?? '');
-    const companyEmail = @json($company->email ?? '');
-    const footerNote = @json($company->footer_note ?? '');
-    const footerContact = @json($company->footer_contact ?? '');
+            const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.png'));
+            const companyName = @json($company->company_name ?? '');
+            const companyCity = @json($company->city ?? '');
+            const companyAddress = @json($company->address ?? '');
+            const companyPhone = @json($company->phone ?? '');
+            const companyEmail = @json($company->email ?? '');
+            const footerNote = @json($company->footer_note ?? '');
+            const footerContact = @json($company->footer_contact ?? '');
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = logoUrl;
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = logoUrl;
 
-    img.onload = function () {
+            img.onload = function() {
 
-        // =========================
-        // LOGO
-        // =========================
-        doc.addImage(img, 'PNG', (pageWidth - 85) / 2, 8, 85, 28);
+                // =========================
+                // LOGO
+                // =========================
+                const logoWidth = pageWidth;
+                const logoHeight = 35; // بدلها 30 أو 40 حسب الصورة
+                const logoX = 0;
+                const logoY = 0;
 
-        // =========================
-        // NOM SOCIETE
-        // =========================
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(70, 85, 110);
-        doc.text(companyName.toUpperCase(), pageWidth / 2, 42, { align: 'center' });
-
-        doc.setDrawColor(0, 102, 204);
-        doc.setLineWidth(0.4);
-        doc.line(65, 46, pageWidth - 65, 46);
+                doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
 
 
+                // =========================
+                // NOM SOCIETE
+                // =========================
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.setTextColor(70, 85, 110);
+                doc.text(companyName.toUpperCase(), pageWidth / 2, 42, {
+                    align: 'center'
+                });
 
-        // =========================
-        // HEADER
-        // =========================
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(10);
-
-        doc.setFont('helvetica', 'bold');
-
-  
-        doc.text(`BON DE LIVRAISON N° ${invoiceNumber}`, 12, 56);
-
-        doc.setFont('helvetica', 'normal');
-        doc.text(`${companyCity}, le : ${invoiceDate}`, pageWidth - 17, 54, { align: 'right' });
-
-        // =========================
-        // CLIENT BOX (صغيرة و زوينة)
-        // =========================
-  
+                doc.setDrawColor(0, 102, 204);
+                doc.setLineWidth(0.4);
+                doc.line(65, 46, pageWidth - 65, 46);
 
 
-        doc.setDrawColor(170, 170, 170);
+
+                // =========================
+                // HEADER
+                // =========================
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);
+
+                doc.setFont('helvetica', 'bold');
+
+
+                doc.text(`BON DE LIVRAISON N° ${invoiceNumber}`, 12, 56);
+
+                doc.setFont('helvetica', 'normal');
+                doc.text(`${companyCity}, le : ${invoiceDate}`, pageWidth - 19, 56, {
+                    align: 'right'
+                });
+
+
+
+                // =========================
+                // CLIENT BOX
+                // =========================
+                doc.setDrawColor(170, 170, 170);
                 doc.setLineWidth(0.25);
                 doc.roundedRect(120, 58, 72, 24, 3, 3);
 
+                // 🔹 CLIENT LABEL
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(9);
                 doc.setTextColor(90, 100, 125);
-                doc.text('CLIENT :', 126, 64);
 
+                const labelX = 126;
+                const labelY = 64;
+
+                doc.text('CLIENT :', labelX, labelY);
+
+                // 🔹 نحسب طول "CLIENT :"
+                const labelWidth = doc.getTextWidth('CLIENT :');
+
+                // 🔹 POSITION ديال الاسم
+                const nameX = labelX + labelWidth + 3;
+
+                // 🔹 CLIENT NAME
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
-                doc.text(customerName.toUpperCase(), 150, 64, {
-                    align: 'center',
-                    maxWidth: 60
+
+                doc.text(customerName.toUpperCase(), nameX, 64, {
+                    maxWidth: 50
                 });
 
+                // 🔹 CLIENT ADDRESS
                 if (customerAddress) {
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8);
 
-                    const addressLines = doc.splitTextToSize(customerAddress, 56);
-                    doc.text(addressLines, 150, 74, {
-                        align: 'center',
-                        maxWidth: 56
-                    });
+                    const addressLines = doc.splitTextToSize(customerAddress, 50);
+
+                    doc.text(addressLines, nameX, 72);
                 }
 
-        // =========================
-        // TABLE DATA
-        // =========================
-        const rows = [];
+                // =========================
+                // TABLE DATA
+                // =========================
+                const rows = [];
 
-        @foreach($facture->items as $item)
-            rows.push([
-                "{{ $item->referonce }}",
-                "{{ $item->designation }}",
-                "{{ $item->quantity }}",
-                "{{ number_format($item->price, 2, ',', '') }}",
-                "{{ number_format($item->line_total, 2, ',', '') }}"
-            ]);
-        @endforeach
+                @foreach ($facture->items as $item)
+                    rows.push([
+                        "{{ $item->referonce }}",
+                        "{{ $item->designation }}",
+                        "{{ $item->quantity }}",
+                        "{{ number_format($item->price, 2, ',', '') }}",
+                        "{{ number_format($item->line_total, 2, ',', '') }}"
+                    ]);
+                @endforeach
 
-        while (rows.length < 15) {
-            rows.push(['', '', '', '', '']);
-        }
+                while (rows.length < 15) {
+                    rows.push(['', '', '', '', '']);
+                }
 
-        doc.autoTable({
-                    startY: 86,
+                doc.autoTable({
+                    startY: 84,
                     head: [
                         [
                             'Référence',
@@ -523,52 +549,89 @@
                     }
                 });
 
-        // =========================
-        // TOTAL
-        // =========================
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
+                // =========================
+                // TOTAL
+                // =========================
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
 
-        doc.setFillColor(0, 102, 204);
-        doc.rect(142, 232, 28, 10, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.text('TOTAL', 156, 238, { align: 'center' });
+                // قياسات table نفسها
+                const tableX = 12;
+                const tableWidth = 180;
+                const tableRight = tableX + tableWidth;
 
-        doc.setFillColor(255, 255, 255);
-        doc.setTextColor(0, 0, 0);
-        doc.rect(170, 232, 22, 10);
-        doc.text(String(grandTotal).replace('.', ','), 190, 238, { align: 'right' });
+                // قياسات total box
+                const totalLabelW = 28;
+                const totalAmountW = 34;
+                const totalH = 10;
+                const totalGroupW = totalLabelW + totalAmountW;
 
-        // =========================
-        // FOOTER
-        // =========================
-        let footerY = pageHeight - 22;
+                // TOTAL خاصها تلصق فاليمين ديال table
+                const totalX = tableRight - totalGroupW;
 
-        doc.setDrawColor(200, 200, 200);
-        doc.line(12, footerY - 6, pageWidth - 12, footerY - 6);
+                // TOTAL خاصها تلصق مباشرة تحت table
+                const totalY = (doc.lastAutoTable.finalY || 200) - 0.5;
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(90, 90, 90);
-        doc.text(footerNote, pageWidth / 2, footerY - 1, { align: 'center', maxWidth: 180 });
+                // label TOTAL
+                doc.setFillColor(0, 102, 204);
+                doc.setTextColor(255, 255, 255);
+                doc.rect(totalX, totalY, totalLabelW, totalH, 'F');
+                doc.text('TOTAL', totalX + (totalLabelW / 2), totalY + 6.5, {
+                    align: 'center'
+                });
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
+                // amount box
+                doc.setFillColor(255, 255, 255);
+                doc.setTextColor(0, 0, 0);
+                doc.rect(totalX + totalLabelW, totalY, totalAmountW, totalH);
 
-        if (companyAddress) {
-            doc.text(companyAddress, pageWidth / 2, footerY + 7, { align: 'center' });
-        }
+                // format total
+                const numberValue = Number(grandTotal) || 0;
+                const parts = numberValue.toFixed(2).split('.');
+                const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                const totalText = integerPart + ',' + parts[1];
 
-        doc.text(
-            footerContact || `${companyPhone} - ${companyEmail}`,
-            pageWidth / 2,
-            footerY + 12,
-            { align: 'center' }
-        );
+                // text amount
+                doc.text(totalText, totalX + totalLabelW + totalAmountW - 2, totalY + 6.5, {
+                    align: 'right'
+                });
 
-        doc.save(`facture_${invoiceNumber}.pdf`);
-    };
-});
+                // =========================
+                // FOOTER
+                // =========================
+                let footerY = pageHeight - 22;
+
+                doc.setDrawColor(200, 200, 200);
+                doc.line(12, footerY - 6, pageWidth - 12, footerY - 6);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7.5);
+                doc.setTextColor(90, 90, 90);
+                doc.text(footerNote, pageWidth / 2, footerY - 1, {
+                    align: 'center',
+                    maxWidth: 180
+                });
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+
+                if (companyAddress) {
+                    doc.text(companyAddress, pageWidth / 2, footerY + 7, {
+                        align: 'center'
+                    });
+                }
+
+                doc.text(
+                    footerContact || `${companyPhone} - ${companyEmail}`,
+                    pageWidth / 2,
+                    footerY + 12, {
+                        align: 'center'
+                    }
+                );
+
+                doc.save(`facture_${invoiceNumber}.pdf`);
+            };
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

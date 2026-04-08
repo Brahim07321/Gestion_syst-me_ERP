@@ -65,6 +65,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/factures/export/excel', [FactureController::class, 'exportExcel'])->name('factures.export.excel');
     Route::get('/factures/export/pdf', [FactureController::class, 'exportPdf'])->name('factures.export.pdf');
 
+
+    Route::get('/factures/{id}/edit', [FactureController::class, 'edit'])->name('factures.edit');
+Route::put('/factures/{id}', [FactureController::class, 'update'])->name('factures.update');
+
+
+Route::put('/payments/{id}', [PaymentController::class, 'update'])->name('payments.update');
+Route::delete('/payments/{id}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+
     // =========================
     // CATEGORIES
     // =========================

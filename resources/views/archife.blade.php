@@ -7,53 +7,53 @@
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
 
             <h2 class="fw-bold mb-1">Archives des factures</h2>
-        
+
             <!-- ACTIONS RIGHT -->
             <div class="ms-md-auto">
-        
+
                 <div class="dropdown ">
-        
-                    <button class="btn btn-light rounded-pill px-3"
-                            type="button"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false">
+
+                    <button class="btn btn-light rounded-pill px-3" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
                         <i class="fas fa-ellipsis-h"></i>
                     </button>
-        
+
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2">
-        
+
                         <li>
                             <a href="{{ route('factures.export.excel', request()->query()) }}"
-                               class="dropdown-item rounded-3 d-flex align-items-center gap-2">
+                                class="dropdown-item rounded-3 d-flex align-items-center gap-2">
                                 <i class="fas fa-file-excel text-success"></i>
                                 Exporter Excel
                             </a>
                         </li>
-        
+
                         <li>
                             <a href="{{ route('factures.export.pdf', request()->query()) }}"
-                               class="dropdown-item rounded-3 d-flex align-items-center gap-2">
+                                class="dropdown-item rounded-3 d-flex align-items-center gap-2">
                                 <i class="fas fa-file-pdf text-danger"></i>
                                 Exporter PDF
                             </a>
                         </li>
-        
-                        <li><hr class="dropdown-divider"></li>
-        
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
                         <li>
                             <a href="{{ route('factures.create') }}"
-                               class="dropdown-item rounded-3 d-flex align-items-center gap-2">
+                                class="dropdown-item rounded-3 d-flex align-items-center gap-2">
                                 <i class="fas fa-plus text-primary"></i>
                                 Nouvelle facture
                             </a>
                         </li>
-        
+
                     </ul>
-        
+
                 </div>
-        
+
             </div>
-        
+
         </div>
         <p class="text-muted mb-4">
             Consultez, filtrez et suivez toutes les factures enregistrées dans le système.
@@ -61,17 +61,17 @@
 
         <!-- ALERTES -->
         @if (session('success'))
-        <div class="alert border-0 rounded-4 shadow-sm d-flex align-items-center justify-content-between px-3 py-3 mb-4"
-             style="background: #ecfdf5; color: #065f46;">
-    
-            <div class="d-flex align-items-center gap-2">
-                <i class="fas fa-check-circle fs-5"></i>
-                <span class="fw-semibold">{{ session('success') }}</span>
+            <div class="alert border-0 rounded-4 shadow-sm d-flex align-items-center justify-content-between px-3 py-3 mb-4"
+                style="background: #ecfdf5; color: #065f46;">
+
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-check-circle fs-5"></i>
+                    <span class="fw-semibold">{{ session('success') }}</span>
+                </div>
+
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
             </div>
-    
-            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
-        </div>
-    @endif
+        @endif
 
         @if (session('error'))
             <div class="alert alert-danger shadow-sm rounded-4">{{ session('error') }}</div>
@@ -96,11 +96,14 @@
                                 <label class="form-label fw-semibold">Statut</label>
                                 <select name="status" class="form-select">
                                     <option value="">Tous</option>
-                                    <option value="payée" {{ request('status') == 'payée' ? 'selected' : '' }}>Payée</option>
-                                    <option value="non payée" {{ request('status') == 'non payée' ? 'selected' : '' }}>Non payée
+                                    <option value="payée" {{ request('status') == 'payée' ? 'selected' : '' }}>Payée
+                                    </option>
+                                    <option value="non payée" {{ request('status') == 'non payée' ? 'selected' : '' }}>Non
+                                        payée
                                     </option>
                                     <option value="partiellement payée"
-                                        {{ request('status') == 'partiellement payée' ? 'selected' : '' }}>Partielle</option>
+                                        {{ request('status') == 'partiellement payée' ? 'selected' : '' }}>Partielle
+                                    </option>
                                     <option value="annulée" {{ request('status') == 'annulée' ? 'selected' : '' }}>Annulée
                                     </option>
                                 </select>
@@ -211,6 +214,8 @@
 
                                     <td>
                                         <div class="d-flex justify-content-center align-items-center gap-2">
+                                    
+                                            <!-- 👁️ VIEW -->
                                             <a href="{{ route('factures.show', $facture->id) }}"
                                                 class="btn btn-sm btn-primary rounded-pill px-3">
                                                 <i class="fas fa-eye"></i>
@@ -218,13 +223,29 @@
                                     
                                             @if (Auth::user()->role === 'admin')
                                                 <div class="position-relative action-menu-wrapper">
+                                    
+                                                    <!-- ... BUTTON -->
                                                     <button type="button"
                                                         class="btn btn-sm btn-light rounded-circle action-menu-btn"
                                                         onclick="toggleFactureMenu(event, 'menu-{{ $facture->id }}')">
                                                         <i class="fas fa-ellipsis-h"></i>
                                                     </button>
                                     
+                                                    <!-- MENU -->
                                                     <div id="menu-{{ $facture->id }}" class="facture-action-menu shadow-sm">
+                                    
+                                                        {{-- ✏️ EDIT --}}
+                                                        @if ($facture->status != 'annulée' && !$facture->trashed())
+                                                        <button type="button"
+                                                        class="dropdown-action-btn text-success"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editFactureModal"
+                                                        onclick="setEditFacture('{{ $facture->id }}','{{ $facture->code_facture }}'); closeAllFactureMenus();">
+                                                        <i class="fas fa-pen me-2"></i>Modifier
+                                                    </button>
+                                                        @endif
+                                    
+                                                        {{-- 🚫 ANNULER --}}
                                                         @if (!in_array($facture->status, ['annulée', 'payée']))
                                                             <button type="button"
                                                                 class="dropdown-action-btn text-warning"
@@ -234,7 +255,9 @@
                                                                 <i class="fas fa-ban me-2"></i>Annuler
                                                             </button>
                                                         @endif
+                                                        
                                     
+                                                        {{-- 🗑️ DELETE --}}
                                                         <button type="button"
                                                             class="dropdown-action-btn text-danger"
                                                             data-bs-toggle="modal"
@@ -242,12 +265,13 @@
                                                             onclick="setDeleteFacture('{{ $facture->id }}','{{ $facture->code_facture }}'); closeAllFactureMenus();">
                                                             <i class="fas fa-trash me-2"></i>Supprimer
                                                         </button>
+                                    
                                                     </div>
                                                 </div>
                                             @endif
+                                    
                                         </div>
-                                    </td>
-                                </tr>
+                                    </td>                                </tr>
                             @empty
                                 <tr>
                                     <td colspan="9" class="text-muted py-4">Aucune facture</td>
@@ -289,19 +313,19 @@
     <div class="modal fade" id="deleteFactureModal">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4 text-center p-4 border-0 shadow">
-    
+
                 <div class="mb-3">
                     <i class="fas fa-trash text-danger fs-1"></i>
                 </div>
-    
+
                 <h5 class="fw-bold mb-2">Confirmation de suppression</h5>
                 <p id="deleteFactureText" class="text-muted mb-0"></p>
-    
+
                 <div class="d-flex justify-content-center gap-3 mt-4">
                     <button class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
                         Non
                     </button>
-    
+
                     <form id="deleteFactureForm" method="POST">
                         @csrf
                         @method('DELETE')
@@ -310,63 +334,96 @@
                         </button>
                     </form>
                 </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editFactureModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 text-center p-4 border-0 shadow">
+    
+                <div class="mb-3">
+                    <i class="fas fa-pen text-success fs-1"></i>
+                </div>
+    
+                <h5 class="fw-bold mb-2">Confirmation de modification</h5>
+                <p id="editFactureText" class="text-muted mb-0"></p>
+    
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <button class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
+                        Non
+                    </button>
+    
+                    <a id="editFactureLink" class="btn btn-success rounded-pill px-4">
+                        Oui, modifier
+                    </a>
+                </div>
     
             </div>
         </div>
     </div>
 
     <script>
+
+function setEditFacture(id, code) {
+    document.getElementById('editFactureText').innerText =
+        'Modifier facture : ' + code + ' ?';
+
+    document.getElementById('editFactureLink').href =
+        '/factures/' + id + '/edit';
+}
         function setCancelFacture(id, code) {
             document.getElementById('cancelFactureForm').action = '/factures/cancel/' + id;
             document.getElementById('cancelFactureText').innerText =
                 'Annuler facture : ' + code + ' ?';
         }
-    
+
         function setCancelFacture(id, code) {
             document.getElementById('cancelFactureForm').action = '/factures/cancel/' + id;
             document.getElementById('cancelFactureText').innerText =
                 'Annuler facture : ' + code + ' ?';
         }
-    
+
         function setDeleteFacture(id, code) {
             document.getElementById('deleteFactureForm').action = '/factures/' + id;
             document.getElementById('deleteFactureText').innerText =
                 'Supprimer facture : ' + code + ' ?';
         }
-    
+
         function toggleFactureMenu(event, menuId) {
             event.stopPropagation();
             closeAllFactureMenus();
-    
+
             const menu = document.getElementById(menuId);
             menu.classList.toggle('show');
         }
-    
+
         function closeAllFactureMenus() {
             document.querySelectorAll('.facture-action-menu').forEach(menu => {
                 menu.classList.remove('show');
             });
         }
-    
-        document.addEventListener('click', function () {
+
+        document.addEventListener('click', function() {
             closeAllFactureMenus();
         });
 
         setTimeout(() => {
-    document.querySelectorAll('.alert').forEach(el => {
-        el.style.transition = "0.4s";
-        el.style.opacity = "0";
-        setTimeout(() => el.remove(), 400);
-    });
-}, 3000);
+            document.querySelectorAll('.alert').forEach(el => {
+                el.style.transition = "0.4s";
+                el.style.opacity = "0";
+                setTimeout(() => el.remove(), 400);
+            });
+        }, 3000);
     </script>
 
     <style>
         .archive-table tbody tr:not(.table-secondary):hover {
             background: #f8fafc;
         }
-  
-    
+
+
         .action-menu-btn {
             width: 36px;
             height: 36px;
@@ -375,11 +432,11 @@
             align-items: center;
             justify-content: center;
         }
-    
+
         .action-menu-btn:hover {
             background: #f8fafc;
         }
-    
+
         .facture-action-menu {
             position: absolute;
             top: 42px;
@@ -392,11 +449,11 @@
             display: none;
             z-index: 1000;
         }
-    
+
         .facture-action-menu.show {
             display: block;
         }
-    
+
         .dropdown-action-btn {
             width: 100%;
             border: 0;
@@ -407,26 +464,35 @@
             font-weight: 600;
             transition: 0.2s ease;
         }
-    
+
         .dropdown-action-btn:hover {
             background: #f8fafc;
         }
-        .dropdown{
+
+        .dropdown {
             background: var(--bs-btn-hover-bg);
         }
+
         .dropdown-menu {
-    min-width: 220px;
-    animation: fadeIn 0.2s ease-in-out;
-}
+            min-width: 220px;
+            animation: fadeIn 0.2s ease-in-out;
+        }
 
-.dropdown-item:hover {
-    background: #f1f5f9;
-}
+        .dropdown-item:hover {
+            background: #f1f5f9;
+        }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 
 @endsection

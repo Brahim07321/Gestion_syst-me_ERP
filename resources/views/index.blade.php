@@ -55,11 +55,11 @@
         <div class="card card-green">
             <div class="card-body">
                 <div class="card-icon">
-                    <i class="fas fa-tags"></i>
+                    <i class="fas fa-file-invoice-dollar"></i>
                 </div>
-                <div class="card-number">{{ $CategoryCount }}</div>
-                <div class="card-title">Catégories</div>
-                <a href="/Category">
+                <div class="card-number">+</div>
+                <div class="card-title">Nouvelle facture</div>
+                <a href="/facture">
                     <button class="card-more">
                         Voir plus <i class="fas fa-arrow-right"></i>
                     </button>

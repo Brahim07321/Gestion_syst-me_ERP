@@ -451,10 +451,21 @@
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
 
-            let invoiceNumber = document.getElementById('invoice_number').value;
+            let invoiceNumber = document.getElementById('invoice_number').value.trim();
 
             if (!invoiceNumber) {
-                invoiceNumber = 'INV-' + new Date().toISOString().slice(0, 19).replace(/[-T:]/g, '');
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+
+                invoiceNumber = `INV-${year}${month}${day}-${hours}${minutes}${seconds}`;
+
+                // مهم: نكتب نفس الرقم فـ input باش يتسيفط مع الفورم
+                document.getElementById('invoice_number').value = invoiceNumber;
             }
             const rawDate = document.getElementById('invoice_date').value;
 
@@ -506,13 +517,12 @@
                 // =========================
                 // LOGO
                 // =========================
-                const logoWidth = 85;
-                const logoHeight = 28;
-                const logoX = (pageWidth - logoWidth) / 2;
-                const logoY = 8;
+                const logoWidth = pageWidth;
+                const logoHeight = 35; // بدلها 30 أو 40 حسب الصورة
+                const logoX = 0;
+                const logoY = 0;
 
                 doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
-
                 // =========================
                 // NOM SOCIETE
                 // =========================
@@ -540,9 +550,10 @@
                 // ✅ date فوق box client وعلى اليمين
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(10);
-                doc.text(`${companyCity}, le : ${invoiceDate}`, pageWidth - 17, 54, {
+                doc.text(`${companyCity}, le : ${invoiceDate}`, pageWidth - 19, 56, {
                     align: 'right'
                 });
+
 
                 // =========================
                 // CLIENT BOX
@@ -551,29 +562,41 @@
                 doc.setLineWidth(0.25);
                 doc.roundedRect(120, 58, 72, 24, 3, 3);
 
+                // 🔹 CLIENT LABEL
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(9);
                 doc.setTextColor(90, 100, 125);
-                doc.text('CLIENT :', 126, 64);
 
+                const labelX = 126;
+                const labelY = 64;
+
+                doc.text('CLIENT :', labelX, labelY);
+
+                // 🔹 نحسب طول "CLIENT :"
+                const labelWidth = doc.getTextWidth('CLIENT :');
+
+                // 🔹 POSITION ديال الاسم
+                const nameX = labelX + labelWidth + 3;
+
+                // 🔹 CLIENT NAME
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
-                doc.text(customerName.toUpperCase(), 150, 64, {
-                    align: 'center',
-                    maxWidth: 60
+
+                doc.text(customerName.toUpperCase(), nameX, 64, {
+                    maxWidth: 50
                 });
 
+                // 🔹 CLIENT ADDRESS
                 if (customerAddress) {
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8);
 
-                    const addressLines = doc.splitTextToSize(customerAddress, 56);
-                    doc.text(addressLines, 150, 74, {
-                        align: 'center',
-                        maxWidth: 56
-                    });
+                    const addressLines = doc.splitTextToSize(customerAddress, 50);
+
+                    doc.text(addressLines, nameX, 72);
                 }
+
 
                 // =========================
                 // TABLE DATA
@@ -606,7 +629,7 @@
                 // TABLE CLEAN
                 // =========================
                 doc.autoTable({
-                    startY: 86,
+                    startY: 84,
                     head: [
                         [
                             'Référence',
@@ -691,22 +714,50 @@
                 // =========================
                 // TOTAL BOX
                 // =========================
-                const totalY = 232;
-
+                // =========================
+                // TOTAL
+                // =========================
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
 
+                // قياسات table نفسها
+                const tableX = 12;
+                const tableWidth = 180;
+                const tableRight = tableX + tableWidth;
+
+                // قياسات total box
+                const totalLabelW = 28;
+                const totalAmountW = 34;
+                const totalH = 10;
+                const totalGroupW = totalLabelW + totalAmountW;
+
+                // TOTAL خاصها تلصق فاليمين ديال table
+                const totalX = tableRight - totalGroupW;
+
+                // TOTAL خاصها تلصق مباشرة تحت table
+                const totalY = (doc.lastAutoTable.finalY || 200) - 0.5;
+
+                // label TOTAL
                 doc.setFillColor(0, 102, 204);
-                doc.rect(142, totalY, 28, 10, 'F');
                 doc.setTextColor(255, 255, 255);
-                doc.text('TOTAL', 156, totalY + 6.5, {
+                doc.rect(totalX, totalY, totalLabelW, totalH, 'F');
+                doc.text('TOTAL', totalX + (totalLabelW / 2), totalY + 6.5, {
                     align: 'center'
                 });
 
+                // amount box
                 doc.setFillColor(255, 255, 255);
                 doc.setTextColor(0, 0, 0);
-                doc.rect(170, totalY, 22, 10);
-                doc.text(String(grandTotal).replace('.', ','), 190, totalY + 6.5, {
+                doc.rect(totalX + totalLabelW, totalY, totalAmountW, totalH);
+
+                // format total
+                const numberValue = Number(grandTotal) || 0;
+                const parts = numberValue.toFixed(2).split('.');
+                const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                const totalText = integerPart + ',' + parts[1];
+
+                // text amount
+                doc.text(totalText, totalX + totalLabelW + totalAmountW - 2, totalY + 6.5, {
                     align: 'right'
                 });
 

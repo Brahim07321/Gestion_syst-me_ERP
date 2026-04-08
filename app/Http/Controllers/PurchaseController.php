@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PurchasesExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\CompanySetting;
 
 class PurchaseController extends Controller
 {
@@ -116,11 +117,15 @@ class PurchaseController extends Controller
 
     public function show($id)
     {
+    
+    $company = CompanySetting::first();
+
    $purchase = Purchase::withTrashed()
         ->with(['items.product', 'supplier'])
         ->findOrFail($id);
+
         
-        return view('purchases.show', compact('purchase'));
+        return view('purchases.show', compact('purchase', 'company'));
     }
 
 

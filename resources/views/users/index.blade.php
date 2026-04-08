@@ -11,7 +11,7 @@
             </p>
         </div>
 
-        <a href="{{ route('users.create') }}" class="btn btn-primary rounded-pill px-4">
+        <a href="{{ route('users.create') }}" class="btn btn-success rounded-pill px-4">
             <i class="fas fa-user-plus me-2"></i>Ajouter un utilisateur
         </a>
     </div>
@@ -74,7 +74,7 @@
                                 <td>
                                     <div class="d-flex justify-content-center gap-2 flex-wrap">
                                         <a href="{{ route('users.edit', $user->id) }}"
-                                           class="btn btn-warning btn-sm rounded-pill px-3 text-white">
+                                           class="btn btn-primary btn-sm rounded-pill px-3 text-white">
                                             <i class="fas fa-edit me-1"></i>Modifier
                                         </a>
                                     

@@ -445,4 +445,146 @@ public function destroy($id)
 
     return back()->with('success', 'Facture supprimée avec succès.');
 }
+
+
+public function edit($id)
+{
+    $facture = Facture::with(['items', 'payments'])->findOrFail($id);
+    $products = Product::all();
+    $customers = Customer::all(['id', 'name', 'address']);
+
+    if ($facture->status === 'annulée') {
+        return redirect()->back()->with('error', 'Impossible de modifier une facture annulée.');
+    }
+
+    return view('edit_facture', compact('facture', 'products', 'customers'));
+}
+
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'invoice_date' => 'required|date',
+        'customer_search' => 'required|string|max:255',
+        'items' => 'required|array|min:1',
+    ]);
+
+    $facture = Facture::with(['items', 'payments'])->findOrFail($id);
+
+    if ($facture->status === 'annulée') {
+        return redirect()->back()->with('error', 'Impossible de modifier une facture annulée.');
+    }
+
+    $oldPaidAmount = (float) $facture->paid_amount;
+
+    // 1) حساب total أولاً
+    $total = 0;
+    foreach ($request->items as $item) {
+        $price = (float) ($item['price'] ?? 0);
+        $quantity = (int) ($item['quantity'] ?? 0);
+        $total += $price * $quantity;
+    }
+
+    // 2) montant payé الجديد
+    $newPaidAmount = (float) ($request->paid_amount ?? 0);
+
+    // 3) التحقق قبل أي تغيير فالداتاباز
+    if ($newPaidAmount > $total) {
+        return redirect()->back()
+            ->withInput()
+            ->with('error', 'Le montant payé ne peut pas dépasser le total de la facture.');
+    }
+
+    DB::beginTransaction();
+
+    try {
+        // رجع stock القديم
+        foreach ($facture->items as $oldItem) {
+            $oldProduct = Product::where('Referonce', $oldItem->referonce)->first();
+            if ($oldProduct) {
+                $oldProduct->increment('Quantite', $oldItem->quantity);
+            }
+        }
+
+        // حذف items القدام
+        $facture->items()->delete();
+
+        // status
+        if ($newPaidAmount == 0) {
+            $status = 'non payée';
+        } elseif ($newPaidAmount < $total) {
+            $status = 'partiellement payée';
+        } else {
+            $status = 'payée';
+        }
+
+        // update facture
+        $facture->update([
+            'client_name' => $request->customer_search,
+            'date_facture' => $request->invoice_date,
+            'total' => $total,
+            'status' => $status,
+            'paid_amount' => $newPaidAmount,
+            'remaining_amount' => max($total - $newPaidAmount, 0),
+        ]);
+
+        // إنشاء items الجداد
+        foreach ($request->items as $item) {
+            $price = (float) ($item['price'] ?? 0);
+            $quantity = (int) ($item['quantity'] ?? 0);
+
+            if (
+                empty($item['referonce']) &&
+                empty($item['designation']) &&
+                $price <= 0 &&
+                $quantity <= 0
+            ) {
+                continue;
+            }
+
+            $product = Product::where('Referonce', $item['referonce'])->first();
+
+            if (!$product) {
+                throw new \Exception('Produit introuvable');
+            }
+
+            if ($product->Quantite < $quantity) {
+                throw new \Exception('Stock insuffisant pour: ' . $product->Designation);
+            }
+
+            $facture->items()->create([
+                'referonce' => $item['referonce'],
+                'designation' => $item['designation'],
+                'price' => $price,
+                'quantity' => $quantity,
+                'line_total' => $price * $quantity,
+            ]);
+
+            $product->decrement('Quantite', $quantity);
+        }
+
+        // إلا تزاد montant payé، زيد payment جديد
+        if ($newPaidAmount > $oldPaidAmount) {
+            $difference = $newPaidAmount - $oldPaidAmount;
+
+            Payment::create([
+                'facture_id' => $facture->id,
+                'amount' => $difference,
+                'payment_date' => $request->invoice_date,
+                'note' => 'Paiement ajouté depuis modification facture',
+            ]);
+        }
+
+        DB::commit();
+
+        return redirect()->route('factures.show', $facture->id)
+            ->with('success', 'Facture modifiée avec succès.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        return redirect()->back()
+            ->withInput()
+            ->with('error', $e->getMessage());
+    }
+}
 }

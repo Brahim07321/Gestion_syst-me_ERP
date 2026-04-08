@@ -235,7 +235,7 @@ class PurchaseImportController extends Controller
 
     $purchase = \App\Models\Purchase::create([
         'supplier_id' => $meta['supplier_id'],
-        'purchase_code' => 'ACH-' . time(),
+        'purchase_code' => 'ACH-' . now()->format('Ymd-His'),
         'purchase_date' => $meta['purchase_date'],
         'status' => $meta['status'],
         'total' => 0
