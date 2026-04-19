@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["php", "phpPackages.composer", "phpExtensions.gd", "phpExtensions.zip", "phpExtensions.pdo", "phpExtensions.pdo_mysql"]
+
+[phases.install]
+cmds = ["composer install --no-dev --optimize-autoloader"]
+
+[start]
+cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
