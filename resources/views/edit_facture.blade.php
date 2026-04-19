@@ -41,18 +41,16 @@
                 <datalist id="products-list">
                     @foreach ($products as $product)
                         @if ($product->Quantite > 0)
-                            <option value="{{ $product->Referonce }}" data-referonce="{{ $product->Referonce }}"
-                                data-designation="{{ $product->Designation }}" data-price="{{ $product->prace_sell }}"
-                                data-stock="{{ $product->Quantite }}">
+                            <option value="{{ $product->Referonce }} - {{ $product->Designation }}"
+                                data-referonce="{{ $product->Referonce }}" data-designation="{{ $product->Designation }}"
+                                data-price="{{ $product->prace_sell }}" data-stock="{{ $product->Quantite }}">
                             </option>
                         @endif
                     @endforeach
                 </datalist>
-  
 
-                {{-- ========================= --}}
-                {{-- FORM FACTURE --}}
-                {{-- ========================= --}}
+                
+
                 <form method="POST" action="{{ route('factures.update', $facture->id) }}" id="editInvoiceForm">
                     @csrf
                     @method('PUT')
@@ -117,10 +115,20 @@
 
                             <tbody id="items-list">
                                 @foreach ($facture->items as $index => $item)
+                                    @php
+                                        $matchedProduct = $products->firstWhere('Referonce', $item->referonce);
+                                        $currentStock = $matchedProduct?->Quantite ?? 0;
+                                    @endphp
+
                                     <tr>
                                         <td>
+
+
+
+
                                             <input type="text" class="form-control product-search" list="products-list"
-                                                value="{{ old("items.$index.referonce", $item->referonce) }}" required>
+                                                value="{{ old("items.$index.referonce", $item->referonce . ' - ' . $item->designation) }}"
+                                                required>
                                             <input type="hidden" name="items[{{ $index }}][referonce]"
                                                 class="product-hidden"
                                                 value="{{ old("items.$index.referonce", $item->referonce) }}">
@@ -141,7 +149,9 @@
                                         <td>
                                             <input type="number" min="1"
                                                 name="items[{{ $index }}][quantity]" class="form-control quantity"
-                                                value="{{ old("items.$index.quantity", $item->quantity) }}" required>
+                                                value="{{ old("items.$index.quantity", $item->quantity) }}"
+                                                data-old-quantity="{{ $item->quantity }}" data-stock="{{ $currentStock }}"
+                                                required>
                                         </td>
 
                                         <td>
@@ -185,9 +195,6 @@
                     </div>
                 </form>
 
-                {{-- ========================= --}}
-                {{-- HISTORIQUE PAIEMENTS --}}
-                {{-- ========================= --}}
                 <div class="mt-5">
                     <h4 class="mb-3">Historique des paiements</h4>
 
@@ -207,40 +214,34 @@
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
 
-                                        <td>
-                                            {{ \Carbon\Carbon::parse($payment->payment_date)->format('d/m/Y') }}
-                                        </td>
+                                        <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d/m/Y') }}</td>
 
                                         <td class="fw-semibold text-success">
                                             {{ number_format($payment->amount, 2) }} MAD
                                         </td>
 
-                                        <td>
-                                            {{ $payment->note ?? '-' }}
-                                        </td>
+                                        <td>{{ $payment->note ?? '-' }}</td>
 
                                         <td>
                                             <div class="d-flex justify-content-center gap-2">
-                                                {{-- EDIT --}}
                                                 <button type="button" class="btn btn-sm btn-primary rounded-pill px-3"
                                                     data-bs-toggle="modal" data-bs-target="#confirmEditPaymentModal"
                                                     onclick='setConfirmEditPayment(
-                                                    @json($payment->id),
-                                                    @json($payment->amount),
-                                                    @json(\Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d')),
-                                                    @json($payment->note ?? ''),
-                                                    @json(number_format($payment->amount, 2))
-                                                )'>
+                                                        @json($payment->id),
+                                                        @json($payment->amount),
+                                                        @json(\Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d')),
+                                                        @json($payment->note ?? ''),
+                                                        @json(number_format($payment->amount, 2))
+                                                    )'>
                                                     <i class="fas fa-pen"></i>
                                                 </button>
 
-                                                {{-- DELETE --}}
                                                 <button type="button" class="btn btn-sm btn-danger rounded-pill px-3"
                                                     data-bs-toggle="modal" data-bs-target="#confirmDeletePaymentModal"
                                                     onclick='setDeletePayment(
-                                                    @json($payment->id),
-                                                    @json(number_format($payment->amount, 2))
-                                                )'>
+                                                        @json($payment->id),
+                                                        @json(number_format($payment->amount, 2))
+                                                    )'>
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -262,9 +263,6 @@
         </div>
     </div>
 
-    {{-- ========================= --}}
-    {{-- MODAL EDIT PAYMENT --}}
-    {{-- ========================= --}}
     <div class="modal fade" id="editPaymentModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content rounded-4 border-0 shadow">
@@ -296,7 +294,6 @@
                                 placeholder="Optionnel">
                         </div>
                     </div>
-                    
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
@@ -313,9 +310,6 @@
         </div>
     </div>
 
-    {{-- ========================= --}}
-    {{-- MODAL CONFIRM EDIT --}}
-    {{-- ========================= --}}
     <div class="modal fade" id="confirmEditPaymentModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4 border-0 shadow text-center p-4">
@@ -339,9 +333,6 @@
         </div>
     </div>
 
-    {{-- ========================= --}}
-    {{-- MODAL CONFIRM DELETE --}}
-    {{-- ========================= --}}
     <div class="modal fade" id="confirmDeletePaymentModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4 border-0 shadow text-center p-4">
@@ -383,220 +374,220 @@
         }
     </style>
 
-    <script>
-        let pendingEditPayment = null;
-
-        function setConfirmEditPayment(id, amount, date, note, amountLabel) {
-            pendingEditPayment = {
-                id,
-                amount,
-                date,
-                note
-            };
-
-            document.getElementById('confirmEditPaymentText').innerText =
-                'Modifier le paiement de ' + amountLabel + ' MAD ?';
-        }
-
-        function setDeletePayment(id, amountLabel) {
-            document.getElementById('deletePaymentForm').action = '/payments/' + id;
-            document.getElementById('deletePaymentText').innerText =
-                'Supprimer le paiement de ' + amountLabel + ' MAD ?';
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const confirmEditBtn = document.getElementById('confirmEditPaymentBtn');
-            const itemsTable = document.getElementById('items-table');
-            const itemsList = document.getElementById('items-list');
-            const productsOptions = document.querySelectorAll('#products-list option');
-            let itemIndex = {{ $facture->items->count() }};
-            const paidAmountInput = document.querySelector('input[name="paid_amount"]');
-
-            if (paidAmountInput) {
-                paidAmountInput.addEventListener('input', function() {
-                    const total = parseFloat(document.getElementById('grand-total')?.textContent) || 0;
-                    let value = parseFloat(this.value) || 0;
-
-                    if (value > total) {
-                        alert('⚠️ Le montant payé ne peut pas dépasser le total de la facture.');
-                        this.value = total.toFixed(2);
-                    }
-
-                    if (value < 0) {
-                        this.value = 0;
-                    }
-                });
-            }
-
-            if (confirmEditBtn) {
-                confirmEditBtn.addEventListener('click', function() {
-                    if (!pendingEditPayment) return;
-
-                    document.getElementById('editPaymentForm').action = '/payments/' + pendingEditPayment
-                    .id;
-                    document.getElementById('edit_payment_amount').value = pendingEditPayment.amount;
-                    document.getElementById('edit_payment_date').value = pendingEditPayment.date;
-                    document.getElementById('edit_payment_note').value = pendingEditPayment.note || '';
-
-                    const confirmModalEl = document.getElementById('confirmEditPaymentModal');
-                    const confirmModal = bootstrap.Modal.getOrCreateInstance(confirmModalEl);
-                    confirmModal.hide();
-
-                    setTimeout(function() {
-                        const editModalEl = document.getElementById('editPaymentModal');
-                        const editModal = bootstrap.Modal.getOrCreateInstance(editModalEl);
-                        editModal.show();
-                    }, 250);
-                });
-            }
-
-            function getProduct(ref) {
-                for (let opt of productsOptions) {
-                    if (opt.value === ref) {
-                        return {
-                            referonce: opt.dataset.referonce,
-                            designation: opt.dataset.designation,
-                            price: opt.dataset.price,
-                            stock: opt.dataset.stock
-                        };
-                    }
-                }
-                return null;
-            }
-
-            function calculateTotals() {
-                let grandTotal = 0;
-
-                document.querySelectorAll('#items-list tr').forEach(row => {
-                    const price = parseFloat(row.querySelector('.price')?.value) || 0;
-                    const quantity = parseInt(row.querySelector('.quantity')?.value) || 0;
-                    const total = price * quantity;
-
-                    const totalCell = row.querySelector('.line-total');
-                    if (totalCell) {
-                        totalCell.textContent = total.toFixed(2);
-                    }
-
-                    grandTotal += total;
-                });
-
-                const subtotalEl = document.getElementById('subtotal');
-                const taxEl = document.getElementById('tax');
-                const grandTotalEl = document.getElementById('grand-total');
-
-                if (subtotalEl) subtotalEl.textContent = grandTotal.toFixed(2);
-                if (taxEl) taxEl.textContent = '0.00';
-                if (grandTotalEl) grandTotalEl.textContent = grandTotal.toFixed(2);
-            }
-
-            itemsTable.addEventListener('input', function(e) {
-                const row = e.target.closest('tr');
-                if (!row) return;
-
-                if (e.target.classList.contains('product-search')) {
-                    const product = getProduct(e.target.value);
-
-                    if (product) {
-                        const stock = parseInt(product.stock) || 0;
-
-                        if (stock <= 0) {
-                            alert('⚠️ هاد المنتج ما بقاش متوفر فالمخزون');
-                            row.querySelector('.product-search').value = '';
-                            row.querySelector('.product-hidden').value = '';
-                            row.querySelector('.designation').value = '';
-                            row.querySelector('.price').value = '';
-                            calculateTotals();
-                            return;
-                        }
-
-                        row.querySelector('.product-hidden').value = product.referonce;
-                        row.querySelector('.designation').value = product.designation;
-                        row.querySelector('.price').value = parseFloat(product.price).toFixed(2);
-                    } else {
-                        row.querySelector('.product-hidden').value = '';
-                        row.querySelector('.designation').value = '';
-                        row.querySelector('.price').value = '';
-                    }
-
-                    calculateTotals();
-                }
-
-                if (
-                    e.target.classList.contains('price') ||
-                    e.target.classList.contains('quantity')
-                ) {
-                    calculateTotals();
-                }
+<script>
+    let pendingEditPayment = null;
+    
+    function setConfirmEditPayment(id, amount, date, note, amountLabel) {
+        pendingEditPayment = { id, amount, date, note };
+    
+        document.getElementById('confirmEditPaymentText').innerText =
+            'Modifier le paiement de ' + amountLabel + ' MAD ?';
+    }
+    
+    function setDeletePayment(id, amountLabel) {
+        document.getElementById('deletePaymentForm').action = '/payments/' + id;
+        document.getElementById('deletePaymentText').innerText =
+            'Supprimer le paiement de ' + amountLabel + ' MAD ?';
+    }
+    
+    document.addEventListener('DOMContentLoaded', function () {
+    
+        const itemsTable = document.getElementById('items-table');
+        const itemsList = document.getElementById('items-list');
+        const productsOptions = document.querySelectorAll('#products-list option');
+        const confirmEditBtn = document.getElementById('confirmEditPaymentBtn');
+    
+        let itemIndex = {{ $facture->items->count() }};
+    
+        // =========================
+        // EDIT PAYMENT
+        // =========================
+        if (confirmEditBtn) {
+            confirmEditBtn.addEventListener('click', function () {
+                if (!pendingEditPayment) return;
+    
+                document.getElementById('editPaymentForm').action = '/payments/' + pendingEditPayment.id;
+                document.getElementById('edit_payment_amount').value = pendingEditPayment.amount;
+                document.getElementById('edit_payment_date').value = pendingEditPayment.date;
+                document.getElementById('edit_payment_note').value = pendingEditPayment.note || '';
+    
+                bootstrap.Modal.getInstance(document.getElementById('confirmEditPaymentModal')).hide();
+    
+                setTimeout(() => {
+                    new bootstrap.Modal(document.getElementById('editPaymentModal')).show();
+                }, 200);
             });
-
-            document.getElementById('add-item').addEventListener('click', function() {
-                const row = document.createElement('tr');
-
-                row.innerHTML = `
-                <td>
-                    <input type="text"
-                        class="form-control product-search"
-                        list="products-list"
-                        placeholder="Référence..."
-                        required>
-                    <input type="hidden"
-                        name="items[${itemIndex}][referonce]"
-                        class="product-hidden">
-                </td>
-
-                <td>
-                    <input type="text"
-                        name="items[${itemIndex}][designation]"
-                        class="form-control designation readonly-input"
-                        readonly>
-                </td>
-
-                <td>
-                    <input type="number"
-                        step="0.01"
-                        min="0"
-                        name="items[${itemIndex}][price]"
-                        class="form-control price"
-                        required>
-                </td>
-
-                <td>
-                    <input type="number"
-                        min="1"
-                        value="1"
-                        name="items[${itemIndex}][quantity]"
-                        class="form-control quantity"
-                        required>
-                </td>
-
-                <td>
-                    <span class="line-total">0.00</span> MAD
-                </td>
-
-                <td class="text-center">
-                    <button type="button" class="btn btn-danger btn-sm delete-item">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-
-                itemsList.appendChild(row);
-                itemIndex++;
+        }
+    
+        // =========================
+        // GET PRODUCT
+        // =========================
+        function getProduct(value) {
+            value = value.trim().toLowerCase();
+    
+            for (let opt of productsOptions) {
+                if (value === opt.value.toLowerCase()) {
+                    return {
+                        referonce: opt.dataset.referonce,
+                        designation: opt.dataset.designation,
+                        price: opt.dataset.price,
+                        stock: parseInt(opt.dataset.stock) || 0
+                    };
+                }
+            }
+            return null;
+        }
+    
+        // =========================
+        // CALCUL TOTAL
+        // =========================
+        function calculateTotals() {
+            let total = 0;
+    
+            document.querySelectorAll('#items-list tr').forEach(row => {
+                const price = parseFloat(row.querySelector('.price')?.value) || 0;
+                const qty = parseInt(row.querySelector('.quantity')?.value) || 0;
+    
+                const line = price * qty;
+    
+                row.querySelector('.line-total').textContent = line.toFixed(2);
+                total += line;
+            });
+    
+            document.getElementById('subtotal').textContent = total.toFixed(2);
+            document.getElementById('grand-total').textContent = total.toFixed(2);
+        }
+    
+        // =========================
+        // INPUT (FAST)
+        // =========================
+        itemsTable.addEventListener('input', function(e) {
+    
+            const row = e.target.closest('tr');
+            if (!row) return;
+    
+            // PRODUCT
+            if (e.target.classList.contains('product-search')) {
+    
+                const value = e.target.value.trim();
+    
+                if (value === '') {
+                    row.querySelector('.product-hidden').value = '';
+                    row.querySelector('.designation').value = '';
+                    row.querySelector('.price').value = '';
+                    row.querySelector('.quantity').value = 1;
+                    row.querySelector('.quantity').dataset.stock = 0;
+                    calculateTotals();
+                    return;
+                }
+    
+                const product = getProduct(value);
+    
+                if (product) {
+                    const qtyInput = row.querySelector('.quantity');
+                    const oldQty = parseInt(qtyInput.dataset.oldQuantity || 0);
+                    const max = product.stock + oldQty;
+    
+                    row.querySelector('.product-hidden').value = product.referonce;
+                    row.querySelector('.designation').value = product.designation;
+                    row.querySelector('.price').value = parseFloat(product.price).toFixed(2);
+    
+                    qtyInput.dataset.stock = product.stock;
+    
+                    if (parseInt(qtyInput.value) > max) {
+                        qtyInput.value = max;
+                    }
+    
+                    // عرض جميل
+                    e.target.value = product.referonce + ' - ' + product.designation;
+                }
+    
                 calculateTotals();
-            });
-
-            itemsTable.addEventListener('click', function(e) {
-                if (e.target.closest('.delete-item')) {
-                    const rows = document.querySelectorAll('#items-list tr');
-
-                    if (rows.length > 1) {
-                        e.target.closest('tr').remove();
-                        calculateTotals();
-                    }
+            }
+    
+            // QUANTITY
+            if (e.target.classList.contains('quantity')) {
+                const qty = e.target;
+                const stock = parseInt(qty.dataset.stock || 0);
+                const oldQty = parseInt(qty.dataset.oldQuantity || 0);
+                const max = stock + oldQty;
+    
+                let value = parseInt(qty.value) || 0;
+    
+                if (value > max) {
+                    alert('⚠️ الكمية كبيرة بزاف (max: ' + max + ')');
+                    qty.value = max;
                 }
-            });
-
-            calculateTotals();
+    
+                if (value < 1) qty.value = 1;
+    
+                calculateTotals();
+            }
+    
+            // PRICE
+            if (e.target.classList.contains('price')) {
+                calculateTotals();
+            }
         });
+    
+        // =========================
+        // ADD ITEM
+        // =========================
+        document.getElementById('add-item').addEventListener('click', function() {
+    
+            const row = document.createElement('tr');
+    
+            row.innerHTML = `
+            <td>
+                <input type="text" class="form-control product-search" list="products-list" required>
+                <input type="hidden" name="items[${itemIndex}][referonce]" class="product-hidden">
+            </td>
+    
+            <td>
+                <input type="text" name="items[${itemIndex}][designation]" class="form-control designation readonly-input" readonly>
+            </td>
+    
+            <td>
+                <input type="number" step="0.01" name="items[${itemIndex}][price]" class="form-control price" required>
+            </td>
+    
+            <td>
+                <input type="number" value="1" name="items[${itemIndex}][quantity]" class="form-control quantity"
+                    data-old-quantity="0" data-stock="0">
+            </td>
+    
+            <td>
+                <span class="line-total">0.00</span> MAD
+            </td>
+    
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm delete-item">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+            `;
+    
+            itemsList.appendChild(row);
+            itemIndex++;
+    
+        });
+    
+        // =========================
+        // DELETE ITEM
+        // =========================
+        itemsTable.addEventListener('click', function(e) {
+    
+            if (e.target.closest('.delete-item')) {
+                const rows = document.querySelectorAll('#items-list tr');
+    
+                if (rows.length > 1) {
+                    e.target.closest('tr').remove();
+                    calculateTotals();
+                }
+            }
+        });
+    
+        calculateTotals();
+    });
     </script>
 @endsection

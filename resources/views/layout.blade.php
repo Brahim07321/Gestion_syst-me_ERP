@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory System</title>
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{asset('css/style.css') }}">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -327,6 +328,11 @@
             <a href="/Customer">
                 <li class="{{ request()->is('Customer') || request()->is('customers/*') ? 'active' : '' }}">
                     <i class="fas fa-user-friends"></i> Clients
+                </li>
+            </a>
+            <a href="/reports">
+                <li class="{{ request()->is('reports') || request()->is('reports/*') ? 'active' : '' }}">
+                    <i class="fas fa-chart-line"></i> Rapport financier
                 </li>
             </a>
             <a href="/expenses">

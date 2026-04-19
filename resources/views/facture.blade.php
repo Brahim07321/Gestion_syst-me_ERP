@@ -95,18 +95,27 @@
     <div class="invoice-container">
         <h1>Créer une Facture</h1>
         <!-- Datalist Produits -->
+     
+
+
+
+
         <datalist id="products-list">
             @foreach ($products as $product)
-                <option value="{{ $product['Referonce'] }}" data-referonce="{{ $product['Referonce'] }}"
-                    data-designation="{{ $product['Designation'] }}" data-price="{{ $product['prace_sell'] }}"
+                <option value="{{ $product['Referonce'] }} - {{ $product['Designation'] }}"
+                    data-referonce="{{ $product['Referonce'] }}"
+                    data-designation="{{ $product['Designation'] }}"
+                    data-price="{{ $product['prace_sell'] }}"
                     data-stock="{{ $product['Quantite'] }}">
                     {{ $product['Designation'] }}
+
                     @if ($product['Quantite'] == 0)
-                        (Rupture)
-                    @endif
+                    (Rupture)
+                @endif
                 </option>
             @endforeach
-        </datalist> <!-- Datalist Clients -->
+        </datalist>
+        <!-- Datalist Clients -->
         <datalist id="customers-list">
             @foreach ($customers as $customer)
                 <option value="{{ $customer->name }}" data-id="{{ $customer->id }}"
@@ -257,22 +266,31 @@
             // =========================
             // GET PRODUCT
             // =========================
-            function getProduct(referonce) {
-                const options = document.querySelectorAll('#products-list option');
+            function getProduct(searchValue) {
+    const options = document.querySelectorAll('#products-list option');
+    const value = (searchValue || '').trim().toLowerCase();
 
-                for (let opt of options) {
-                    if (opt.value === referonce) {
-                        return {
-                            referonce: opt.dataset.referonce,
-                            designation: opt.dataset.designation,
-                            price: opt.dataset.price,
-                            stock: opt.dataset.stock
-                        };
-                    }
-                }
+    for (let opt of options) {
+        const referonce = (opt.dataset.referonce || '').trim().toLowerCase();
+        const designation = (opt.dataset.designation || '').trim().toLowerCase();
+        const fullValue = (opt.value || '').trim().toLowerCase();
 
-                return null;
-            }
+        if (
+            value === referonce ||
+            value === designation ||
+            value === fullValue
+        ) {
+            return {
+                referonce: opt.dataset.referonce,
+                designation: opt.dataset.designation,
+                price: opt.dataset.price,
+                stock: opt.dataset.stock
+            };
+        }
+    }
+
+    return null;
+}
 
             // =========================
             // GET CLIENT
@@ -498,16 +516,16 @@
             const customerAddress = clientData.address;
             const grandTotal = document.getElementById('grand-total').textContent || '0.00';
 
-            const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.png'));
-            const companyCity = @json($company->city ?? 'Marrakech');
+            const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.jpg'));
+            const companyCity = @json($company->city ?? 'Agader');
             const companyName = @json($company->company_name ?? '');
             const companyAddress = @json($company->address ?? '');
-            const companyPhone = @json($company->phone ?? '');
+            const companyPhone = @json($company->phone ?? '0661247414');
             const companyEmail = @json($company->email ?? '');
             const footerNote = @json(
                 $company->footer_note ??
-                    "LES TURBOCHARGEURS, LES PIÈCES ÉLECTRONIQUES ET HYDRAULIQUES NE SONT PAS COUVERTS PAR LA GARANTIE AUCUN RETOUR OU AVOIR N'EST ACCEPTÉ");
-            const footerContact = @json($company->footer_contact ?? '');
+                'Notre société est spécialisée dans la vente de pièces pour machines industrielles. Nous nous engageons à fournir des produits de qualité, fiables et adaptés à vos besoins. Nous vous remercions pour votre confiance.');
+            const footerContact = @json($company->footer_contact ?? 'Tell: 0661247414  || 0680661043');
 
             const img = new Image();
             img.crossOrigin = 'anonymous';
@@ -806,6 +824,13 @@
                         maxWidth: 180
                     }
                 );
+                const printDate = new Date().toLocaleString('fr-FR');
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(120, 120, 120);
+
+                doc.text(`Imprimé le : ${printDate}`, 12, pageHeight - 5);
 
                 doc.save(`facture_${invoiceNumber}.pdf`);
                 document.getElementById('invoiceForm').submit();

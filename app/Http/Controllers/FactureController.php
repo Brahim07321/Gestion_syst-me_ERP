@@ -453,6 +453,12 @@ public function edit($id)
     $products = Product::all();
     $customers = Customer::all(['id', 'name', 'address']);
 
+    foreach ($facture->items as $item) {
+        $product = Product::where('Referonce', $item->referonce)->first();
+    
+        $item->current_stock = $product ? $product->Quantite : 0;
+    }
+
     if ($facture->status === 'annulée') {
         return redirect()->back()->with('error', 'Impossible de modifier une facture annulée.');
     }

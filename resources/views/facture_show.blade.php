@@ -347,12 +347,14 @@
 
             const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.png'));
             const companyName = @json($company->company_name ?? '');
-            const companyCity = @json($company->city ?? '');
+            const companyCity = @json($company->city ?? 'Agader');
             const companyAddress = @json($company->address ?? '');
-            const companyPhone = @json($company->phone ?? '');
+            const companyPhone = @json($company->phone ?? '0661247414');
             const companyEmail = @json($company->email ?? '');
-            const footerNote = @json($company->footer_note ?? '');
-            const footerContact = @json($company->footer_contact ?? '');
+            const footerNote = @json($company->footer_note ?? 
+            'Notre société est spécialisée dans la vente de pièces pour machines industrielles. Nous nous engageons à fournir des produits de qualité, fiables et adaptés à vos besoins.Nous vous remercions pour votre confiance.');
+            const footerContact = @json(
+                $company->footer_contact ?? 'Tell: 0661247414  || 0680661043');
 
             const img = new Image();
             img.crossOrigin = 'anonymous';
@@ -628,6 +630,14 @@
                         align: 'center'
                     }
                 );
+
+                const printDate = new Date().toLocaleString('fr-FR');
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(120, 120, 120);
+
+                doc.text(`Imprimé le : ${printDate}`, 12, pageHeight - 5);
 
                 doc.save(`facture_${invoiceNumber}.pdf`);
             };
