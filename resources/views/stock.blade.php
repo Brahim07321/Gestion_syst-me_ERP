@@ -127,7 +127,10 @@
                                         {{ $product->Quantite }}
                                     </td>
                                     <td>
-                                        <a href="/product" class="btn btn-primary btn-sm rounded-pill px-3">
+                                       
+
+
+                                        <a href="{{ route('product.details', $product->id) }}" class="btn btn-primary btn-sm rounded-pill px-3">
                                             <i class="fas fa-eye me-1"></i>Voir
                                         </a>
                                     </td>

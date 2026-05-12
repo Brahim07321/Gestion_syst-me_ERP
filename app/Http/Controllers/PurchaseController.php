@@ -65,6 +65,8 @@ class PurchaseController extends Controller
 
                 if ($product) {
                     $product->increment('Quantite', $quantity);
+                    $product->prace_bay = $price;  // ← zid hadi
+                    $product->save();
 
                     StockMovement::create([
                         'product_id' => $product->id,
@@ -268,6 +270,8 @@ public function markAsReceived($id)
 
         if ($product) {
             $product->increment('Quantite', $item->quantity);
+            $product->prace_bay = $item->buy_price;  // ← zid hadi
+            $product->save();
 
             StockMovement::create([
                 'product_id' => $product->id,

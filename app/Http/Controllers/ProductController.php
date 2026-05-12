@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\CompanySetting;
 
+use App\Models\PurchaseItem;
+
 // You need this for category model
 class ProductController extends Controller
 {
@@ -200,6 +202,18 @@ public function downloadTemplate()
     return Excel::download(new TemplateExport, 'template_products.xlsx');
 }
 
+
+public function details($id)
+{
+    $product = Product::findOrFail($id);
+    
+    $purchases = PurchaseItem::with('purchase.supplier')
+        ->where('product_id', $id)
+        ->latest()
+        ->get();
+
+    return view('products.details', compact('product', 'purchases'));
+}
 
 
 

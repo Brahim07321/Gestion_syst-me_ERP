@@ -100,19 +100,15 @@
 
 
 
+        
         <datalist id="products-list">
             @foreach ($products as $product)
-                <option value="{{ $product['Referonce'] }} - {{ $product['Designation'] }}"
-                    data-referonce="{{ $product['Referonce'] }}"
-                    data-designation="{{ $product['Designation'] }}"
-                    data-price="{{ $product['prace_sell'] }}"
-                    data-stock="{{ $product['Quantite'] }}">
-                    {{ $product['Designation'] }}
-
-                    @if ($product['Quantite'] == 0)
-                    (Rupture)
-                @endif
-                </option>
+            <option value="{{ $product['Referonce'] }} - {{ $product['Designation'] }}{{ $product['Quantite'] == 0 ? ' (Rupture)' : '' }}"
+            data-referonce="{{ $product['Referonce'] }}"
+            data-designation="{{ $product['Designation'] }}"
+            data-price="{{ $product['prace_sell'] }}"
+            data-stock="{{ $product['Quantite'] }}">
+        </option>
             @endforeach
         </datalist>
         <!-- Datalist Clients -->
@@ -175,6 +171,7 @@
                                 <input type="text" class="form-control product-search search-input"
                                     list="products-list" placeholder="Référence..." required>
                                 <input type="hidden" name="items[0][referonce]" class="product-hidden">
+                                
                             </td>
                             <td>
                                 <input type="text" name="items[0][designation]"
@@ -270,15 +267,17 @@
     const options = document.querySelectorAll('#products-list option');
     const value = (searchValue || '').trim().toLowerCase();
 
+    if (!value) return null;
+
     for (let opt of options) {
         const referonce = (opt.dataset.referonce || '').trim().toLowerCase();
         const designation = (opt.dataset.designation || '').trim().toLowerCase();
         const fullValue = (opt.value || '').trim().toLowerCase();
 
         if (
-            value === referonce ||
-            value === designation ||
-            value === fullValue
+            fullValue === value ||
+            referonce === value ||
+            designation === value
         ) {
             return {
                 referonce: opt.dataset.referonce,

@@ -345,7 +345,7 @@
             const customerAddress = @json($customer->address ?? '');
             const grandTotal = @json($facture->total);
 
-            const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.png'));
+            const logoUrl = @json(!empty($company?->logo) ? asset('storage/' . $company->logo) : asset('images/img.jpg'));
             const companyName = @json($company->company_name ?? '');
             const companyCity = @json($company->city ?? 'Agader');
             const companyAddress = @json($company->address ?? '');

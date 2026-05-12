@@ -91,6 +91,9 @@ Route::delete('/payments/{id}', [PaymentController::class, 'destroy'])->name('pa
     Route::post('/import-products', [ProductController::class, 'import'])->name('products.import');
     Route::get('/template-products', [ProductController::class, 'downloadTemplate'])->name('products.template');
 
+
+    Route::get('/product/{id}/details', [ProductController::class, 'details'])->name('product.details');
+
     // =========================
     // CUSTOMERS
     // =========================
