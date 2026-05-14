@@ -397,8 +397,8 @@
                 row.querySelector('.product-hidden').value = id;
 
                 const priceInput = row.querySelector('.price');
-                if (priceInput && !priceInput.value) {
-                    priceInput.value = parseFloat(price).toFixed(2);
+                if (priceInput) {
+                    priceInput.value = parseFloat(price).toFixed(2);  // ← supprime if condition
                 }
 
                 calculateGrandTotal();

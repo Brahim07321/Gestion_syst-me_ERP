@@ -16,6 +16,7 @@ class Facture extends Model
         'client_name',
         'total',
         'date_facture',
+        'due_date',
         'status',
         'paid_amount',
         'remaining_amount',

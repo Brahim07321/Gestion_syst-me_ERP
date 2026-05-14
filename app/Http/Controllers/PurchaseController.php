@@ -26,11 +26,15 @@ class PurchaseController extends Controller
             'purchase_date' => 'required|date',
             'status' => 'required|string',
             'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',  // ← zid
+            'items.*.quantity'   => 'required|integer|min:1',        // ← zid
+            'items.*.buy_price'  => 'required|numeric|min:0',        // ← zid
         ]);
 
         $total = 0;
 
         foreach ($request->items as $item) {
+            if (empty($item['product_id'])) continue;
             $price = (float) ($item['buy_price'] ?? 0);
             $quantity = (int) ($item['quantity'] ?? 0);
             $total += $price * $quantity;
@@ -94,6 +98,7 @@ class PurchaseController extends Controller
 
     public function index(Request $request)
     {
+        
         $search = strtolower($request->search ?? '');
         $status = $request->status ?? '';
         $suppliers = Supplier::orderBy('name')->get();

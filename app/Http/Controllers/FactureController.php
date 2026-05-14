@@ -8,6 +8,8 @@ use App\Models\Category;
 use App\Models\product;
 use App\Models\Customer;
 use App\Models\Purchase;
+use App\Models\Supplier;
+
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
 use App\Models\StockMovement;
@@ -76,6 +78,7 @@ class FactureController extends Controller
         'invoice_date' => 'required|date',
         'customer_search' => 'required|string|max:255',
         'items' => 'required|array|min:1',
+        'due_date' => 'nullable|date',
     ]);
 
     DB::beginTransaction();
@@ -110,6 +113,7 @@ class FactureController extends Controller
             'client_name' => $request->customer_search,
             'total' => $total,
             'date_facture' => $request->invoice_date,
+            'due_date' => $request->due_date,
             'status' => $status,
             'paid_amount' => 0,
             'remaining_amount' => $total,
@@ -210,6 +214,8 @@ $company = CompanySetting::first();
 return view('facture_show', compact('facture', 'customer', 'company'));}
 public function dashboard()
 {
+    $SuppliersCount = Supplier::count();
+
     $facturesCount = Facture::count();
     $CategoryCount = Category::count();
     $productesCount = Product::count();
@@ -273,6 +279,7 @@ public function dashboard()
         
         
             return view('index', compact(
+                'SuppliersCount',
         'facturesCount',
         'CategoryCount',
         'productesCount',

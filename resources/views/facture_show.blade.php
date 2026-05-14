@@ -123,11 +123,13 @@
 
         <div class="row mb-4 p-3 shadow-sm rounded" style="background:#f8f9fa;">
 
-            <div class="col-md-6 border-end">
+            <div class="col-md-3 border-end">
                 <label class="text-muted small">Client</label>
                 <input type="text" class="form-control readonly-input border-0 bg-transparent fw-bold"
                     value="{{ $facture->client_name }}" readonly>
             </div>
+
+           
 
 
 
@@ -135,6 +137,12 @@
                 <label class="text-muted small">Date Facture</label>
                 <input type="text" class="form-control readonly-input border-0 bg-transparent fw-bold"
                     value="{{ \Carbon\Carbon::parse($facture->date_facture)->format('d/m/Y') }}" readonly>
+            </div>
+
+            <div class="col-md-3 border-end">
+                <label class="text-muted small">Date d'échéance</label>
+                <input type="text" class="form-control readonly-input border-0 bg-transparent fw-bold"
+                    value="{{ $facture->due_date ? \Carbon\Carbon::parse($facture->due_date)->format('d/m/Y') : '-' }}" readonly>
             </div>
 
             <div class="col-md-3">

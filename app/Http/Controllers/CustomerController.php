@@ -19,22 +19,27 @@ class CustomerController extends Controller
 
     public function createCustomer(Request $request)
     {
-        $formFields = $request->validate([
+        $request->validate([
             'name' => 'required',
-            'address' => 'required',
-            'contact' => 'required',
+            'address' => 'nullable',  // ← machi required
+            'contact' => 'nullable',  // ← machi required
         ]);
-
+    
         try {
-            Customer::create($formFields);
-
+            Customer::create([
+                'name' => $request->name,
+                'address' => $request->address ?? '',
+                'contact' => $request->contact ?? '',
+            ]);
+    
             if ($request->input('source') === 'invoice') {
-                return redirect()->back()->with('message', 'Customer created successfully and you are still on the Invoice page!');
+                return redirect()->back()->with('success', 'Client ajouté avec succès!');
             }
-
-            return redirect('/Customer')->with('message', 'Customer created successfully!');
+    
+            return redirect('/Customer')->with('message', 'Client ajouté avec succès!');
+    
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erreur: ' . $e->getMessage());
         }
     }
 

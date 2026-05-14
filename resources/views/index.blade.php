@@ -117,9 +117,9 @@
                 <div class="card-icon">
                     <i class="fas fa-archive"></i>
                 </div>
-                <div class="card-number">{{ $facturesCount + $PurchaseCount }}</div>
-                <div class="card-title">Total des documents</div>
-                <a href="/archife">
+                <div class="card-number">{{ $SuppliersCount }}</div>
+                <div class="card-title">Fournisseurs</div>
+                <a href="/suppliers">
                     <button class="card-more">
                         Voir plus <i class="fas fa-arrow-right"></i>
                     </button>

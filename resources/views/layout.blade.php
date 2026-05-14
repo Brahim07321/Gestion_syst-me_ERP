@@ -265,7 +265,7 @@
                 <i class="fas fa-user-circle"></i>
             </div>
             <div class="admin-info">
-                <h5>Mariv Part</h5>
+                <h5>Mariv Parts</h5>
             </div>
         </div>
 

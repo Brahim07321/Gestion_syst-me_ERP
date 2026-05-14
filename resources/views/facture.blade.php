@@ -120,6 +120,74 @@
             @endforeach
         </datalist>
 
+
+
+        <!-- BOUTON - zid hdda input client -->
+<button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-2" 
+data-bs-toggle="modal" data-bs-target="#addClientModal">
+<i class="fas fa-plus me-1"></i> Ajouter client
+</button>
+
+<!-- MODAL -->
+<div class="modal fade" id="addClientModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow rounded-4">
+        <div class="modal-header border-0">
+            <div>
+                <h5 class="modal-title fw-bold">Ajouter un client</h5>
+                <p class="text-muted small mb-0">Créez rapidement un nouveau client.</p>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <form method="POST" action="{{ route('customers.store') }}" id="addClientForm">
+            @csrf
+            <input type="hidden" name="source" value="invoice"> 
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Nom</label>
+                        <input type="text" name="name" class="form-control" 
+                            placeholder="Nom du client" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Téléphone</label>
+                        <input type="text" name="phone" class="form-control" 
+                            placeholder="Téléphone">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email</label>
+                        <input type="email" name="email" class="form-control" 
+                            placeholder="Adresse email">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Adresse</label>
+                        <input type="text" name="address" class="form-control" 
+                            placeholder="Adresse du client">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" 
+                    data-bs-dismiss="modal">Fermer</button>
+                <button type="submit" class="btn btn-success rounded-pill px-4">
+                    <i class="fas fa-plus me-2"></i>Ajouter le client
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
+<!-- Bootstrap JS - ila mkaynch déjà -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+
+
         <form method="POST" action="{{ route('facture.store') }}" id="invoiceForm">
             @csrf
 
