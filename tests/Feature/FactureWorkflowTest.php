@@ -442,4 +442,56 @@ public function test_create_facture_with_full_payment_marks_as_paid(): void
         'note' => 'Paiement initial',
     ]);
 }
+public function test_create_facture_without_payment_marks_as_unpaid(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Sans Paiement Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('products')->insert([
+        'Category_ID' => $categoryId,
+        'code' => 'P-NO-PAY-001',
+        'Referonce' => 'REF-NO-PAY-001',
+        'Designation' => 'Produit Sans Paiement Test',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Sans Paiement Test',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            // paid_amount ما صيفطناهاش
+            'items' => [
+                [
+                    'referonce' => 'REF-NO-PAY-001',
+                    'designation' => 'Produit Sans Paiement Test',
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('factures', [
+        'client_name' => 'Client Sans Paiement Test',
+        'total' => 300,
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'status' => 'non payée',
+    ]);
+
+    $this->assertDatabaseMissing('payments', [
+        'note' => 'Paiement initial',
+    ]);
+}
 }
