@@ -134,4 +134,15 @@ public function test_purchases_pdf_export_works(): void
     $response->assertStatus(200);
     $response->assertHeader('content-disposition');
 }
+public function test_products_template_download_works(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->get(route('products.template'));
+
+    $response->assertStatus(200);
+    $response->assertHeader('content-disposition');
+}
+
 }
