@@ -70,4 +70,25 @@ class PagesAndExportsTest extends TestCase
 
         $response->assertStatus(200);
     }
+    public function test_factures_excel_export_works(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->get(route('factures.export.excel'));
+
+    $response->assertStatus(200);
+    $response->assertHeader('content-disposition');
+}
+
+public function test_factures_pdf_export_works(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->get(route('factures.export.pdf'));
+
+    $response->assertStatus(200);
+    $response->assertHeader('content-disposition');
+}
 }
