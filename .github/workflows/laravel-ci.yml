@@ -58,8 +58,24 @@ jobs:
           extensions: mbstring, bcmath, pdo_mysql, xml, ctype, fileinfo, tokenizer
           coverage: none
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install NPM dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build frontend assets
+        run: npm run build
 
       - name: Prepare Laravel
         run: |
