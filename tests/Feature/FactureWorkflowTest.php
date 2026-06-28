@@ -800,4 +800,32 @@ public function test_update_cancelled_facture_is_rejected(): void
         'Quantite' => 5,
     ]);
 }
+public function test_edit_cancelled_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-EDIT-CANCEL-001',
+        'client_name' => 'Client Edit Cancelled Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'annulée',
+        'paid_amount' => 0,
+        'remaining_amount' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('factures.edit', $factureId));
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'status' => 'annulée',
+    ]);
+}
 }
