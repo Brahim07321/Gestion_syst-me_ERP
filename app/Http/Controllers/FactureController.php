@@ -117,6 +117,12 @@ class FactureController extends Controller
 
         $paid = (float) ($request->paid_amount ?? 0);
 
+        if ($paid > $total) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Le montant payé ne peut pas dépasser le total de la facture.');
+        }
+
         if ($paid == 0) {
             $status = 'non payée';
         } elseif ($paid < $total) {

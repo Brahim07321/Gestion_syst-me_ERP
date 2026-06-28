@@ -582,4 +582,48 @@ public function test_facture_item_requires_quantity(): void
     $this->assertDatabaseCount('factures', 0);
 }
 
+public function test_facture_creation_rejects_paid_amount_greater_than_total(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = \Illuminate\Support\Facades\DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Paid Validation',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    \Illuminate\Support\Facades\DB::table('products')->insert([
+        'Category_ID' => $categoryId,
+        'code' => 'P-FAC-PAID-001',
+        'Referonce' => 'REF-FAC-PAID-001',
+        'Designation' => 'Produit Paid Validation',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Paid Validation',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'paid_amount' => 500, // total غادي يكون غير 300
+            'items' => [
+                [
+                    'referonce' => 'REF-FAC-PAID-001',
+                    'designation' => 'Produit Paid Validation',
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseCount('factures', 0);
+}
+
 }
