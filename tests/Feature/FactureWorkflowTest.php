@@ -946,4 +946,44 @@ public function test_add_payment_greater_than_remaining_amount_is_rejected(): vo
         'status' => 'partiellement payée',
     ]);
 }
+public function test_add_payment_to_paid_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-ALREADY-PAID-001',
+        'client_name' => 'Client Already Paid Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'payée',
+        'paid_amount' => 300,
+        'remaining_amount' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('payments.store', $factureId), [
+            'amount' => 50,
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement après facture payée',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseMissing('payments', [
+        'facture_id' => $factureId,
+        'amount' => 50,
+        'note' => 'Paiement après facture payée',
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'paid_amount' => 300,
+        'remaining_amount' => 0,
+        'status' => 'payée',
+    ]);
+}
 }
