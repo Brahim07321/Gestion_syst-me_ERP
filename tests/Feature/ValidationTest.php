@@ -186,5 +186,200 @@ public function test_product_creation_requires_quantite(): void
         'Referonce' => 'REF-VALID-004',
     ]);
 }
+public function test_purchase_creation_requires_supplier(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = \Illuminate\Support\Facades\DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Purchase Validation',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $productId = \Illuminate\Support\Facades\DB::table('products')->insertGetId([
+        'Category_ID' => $categoryId,
+        'code' => 'P-PUR-VALID-001',
+        'Referonce' => 'REF-PUR-VALID-001',
+        'Designation' => 'Produit Purchase Validation',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('purchases.store'), [
+            // 'supplier_id' ناقص
+            'purchase_date' => now()->toDateString(),
+            'status' => 'en attente',
+            'items' => [
+                [
+                    'product_id' => $productId,
+                    'quantity' => 2,
+                    'buy_price' => 100,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['supplier_id']);
+
+    $this->assertDatabaseCount('purchases', 0);
+}
+public function test_purchase_creation_requires_items(): void
+{
+    $admin = $this->adminUser();
+
+    $supplierId = \Illuminate\Support\Facades\DB::table('suppliers')->insertGetId([
+        'name' => 'Fournisseur Purchase Validation',
+        'phone' => '0611111111',
+        'address' => 'Adresse Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('purchases.store'), [
+            'supplier_id' => $supplierId,
+            'purchase_date' => now()->toDateString(),
+            'status' => 'en attente',
+            // 'items' ناقصة هنا
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items']);
+
+    $this->assertDatabaseCount('purchases', 0);
+}
+public function test_purchase_item_requires_product_id(): void
+{
+    $admin = $this->adminUser();
+
+    $supplierId = \Illuminate\Support\Facades\DB::table('suppliers')->insertGetId([
+        'name' => 'Fournisseur Item Validation',
+        'phone' => '0611111111',
+        'address' => 'Adresse Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('purchases.store'), [
+            'supplier_id' => $supplierId,
+            'purchase_date' => now()->toDateString(),
+            'status' => 'en attente',
+            'items' => [
+                [
+                    // 'product_id' ناقص هنا
+                    'quantity' => 2,
+                    'buy_price' => 100,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items.0.product_id']);
+
+    $this->assertDatabaseCount('purchases', 0);
+}
+public function test_purchase_item_requires_quantity(): void
+{
+    $admin = $this->adminUser();
+
+    $supplierId = \Illuminate\Support\Facades\DB::table('suppliers')->insertGetId([
+        'name' => 'Fournisseur Quantity Validation',
+        'phone' => '0611111111',
+        'address' => 'Adresse Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $categoryId = \Illuminate\Support\Facades\DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Quantity Validation',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $productId = \Illuminate\Support\Facades\DB::table('products')->insertGetId([
+        'Category_ID' => $categoryId,
+        'code' => 'P-PUR-QTY-001',
+        'Referonce' => 'REF-PUR-QTY-001',
+        'Designation' => 'Produit Quantity Validation',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('purchases.store'), [
+            'supplier_id' => $supplierId,
+            'purchase_date' => now()->toDateString(),
+            'status' => 'en attente',
+            'items' => [
+                [
+                    'product_id' => $productId,
+                    // 'quantity' ناقصة هنا
+                    'buy_price' => 100,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items.0.quantity']);
+
+    $this->assertDatabaseCount('purchases', 0);
+}
+public function test_purchase_item_requires_buy_price(): void
+{
+    $admin = $this->adminUser();
+
+    $supplierId = \Illuminate\Support\Facades\DB::table('suppliers')->insertGetId([
+        'name' => 'Fournisseur Buy Price Validation',
+        'phone' => '0611111111',
+        'address' => 'Adresse Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $categoryId = \Illuminate\Support\Facades\DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Buy Price Validation',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $productId = \Illuminate\Support\Facades\DB::table('products')->insertGetId([
+        'Category_ID' => $categoryId,
+        'code' => 'P-PUR-PRICE-001',
+        'Referonce' => 'REF-PUR-PRICE-001',
+        'Designation' => 'Produit Buy Price Validation',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('purchases.store'), [
+            'supplier_id' => $supplierId,
+            'purchase_date' => now()->toDateString(),
+            'status' => 'en attente',
+            'items' => [
+                [
+                    'product_id' => $productId,
+                    'quantity' => 2,
+                    // 'buy_price' ناقصة هنا
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items.0.buy_price']);
+
+    $this->assertDatabaseCount('purchases', 0);
+}
 
 }
