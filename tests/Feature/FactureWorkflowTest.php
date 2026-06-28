@@ -986,4 +986,44 @@ public function test_add_payment_to_paid_facture_is_rejected(): void
         'status' => 'payée',
     ]);
 }
+public function test_add_payment_to_cancelled_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-CANCELLED-PAYMENT-001',
+        'client_name' => 'Client Cancelled Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'annulée',
+        'paid_amount' => 0,
+        'remaining_amount' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('payments.store', $factureId), [
+            'amount' => 50,
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement sur facture annulée',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseMissing('payments', [
+        'facture_id' => $factureId,
+        'amount' => 50,
+        'note' => 'Paiement sur facture annulée',
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'status' => 'annulée',
+        'paid_amount' => 0,
+        'remaining_amount' => 0,
+    ]);
+}
 }
