@@ -336,4 +336,57 @@ public function test_restore_cancelled_deleted_facture_decreases_stock_and_react
         'reference' => 'FAC-RESTORE-001',
     ]);
 }
+public function test_create_facture_with_partial_payment_marks_as_partially_paid(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Paiement Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('products')->insert([
+        'Category_ID' => $categoryId,
+        'code' => 'P-PAY-001',
+        'Referonce' => 'REF-PAY-001',
+        'Designation' => 'Produit Paiement Test',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Paiement Test',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'paid_amount' => 100,
+            'items' => [
+                [
+                    'referonce' => 'REF-PAY-001',
+                    'designation' => 'Produit Paiement Test',
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('factures', [
+        'client_name' => 'Client Paiement Test',
+        'total' => 300,
+        'paid_amount' => 100,
+        'remaining_amount' => 200,
+        'status' => 'partiellement payée',
+    ]);
+
+    $this->assertDatabaseHas('payments', [
+        'amount' => 100,
+        'note' => 'Paiement initial',
+    ]);
+}
 }
