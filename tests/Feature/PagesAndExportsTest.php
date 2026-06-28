@@ -205,5 +205,15 @@ public function test_ai_purchase_import_preview_requires_file(): void
     $response->assertStatus(302);
     $response->assertSessionHasErrors();
 }
+public function test_ai_purchase_import_confirm_requires_data(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('purchases.import.ai.confirm'), []);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors();
+}
 
 }
