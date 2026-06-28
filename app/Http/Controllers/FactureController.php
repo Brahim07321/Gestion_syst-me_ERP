@@ -74,13 +74,29 @@ class FactureController extends Controller
     }
     public function store(Request $request)
 {
+
+
     $request->validate([
         'invoice_number' => 'nullable|string|max:255|unique:factures,code_facture',
         'invoice_date' => 'required|date',
         'customer_search' => 'required|string|max:255',
-        'items' => 'required|array|min:1',
         'due_date' => 'nullable|date',
+    
+        'items' => 'required|array|min:1',
+        'items.*.referonce' => 'required|string',
+        'items.*.designation' => 'required|string',
+        'items.*.price' => 'required|numeric|min:0',
+        'items.*.quantity' => 'required|numeric|min:1',
     ]);
+    // $request->validate([
+    //     'invoice_number' => 'nullable|string|max:255|unique:factures,code_facture',
+    //     'invoice_date' => 'required|date',
+    //     'customer_search' => 'required|string|max:255',
+    //     'items' => 'required|array|min:1',
+    //     'due_date' => 'nullable|date',
+    // ]);
+
+  
 
     DB::beginTransaction();
 

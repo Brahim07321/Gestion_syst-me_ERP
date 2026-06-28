@@ -382,4 +382,204 @@ public function test_purchase_item_requires_buy_price(): void
     $this->assertDatabaseCount('purchases', 0);
 }
 
+public function test_facture_creation_requires_customer_search(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = \Illuminate\Support\Facades\DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Facture Validation',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    \Illuminate\Support\Facades\DB::table('products')->insert([
+        'Category_ID' => $categoryId,
+        'code' => 'P-FAC-VALID-001',
+        'Referonce' => 'REF-FAC-VALID-001',
+        'Designation' => 'Produit Facture Validation',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            // 'customer_search' ناقصة هنا
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [
+                [
+                    'referonce' => 'REF-FAC-VALID-001',
+                    'designation' => 'Produit Facture Validation',
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['customer_search']);
+
+    $this->assertDatabaseCount('factures', 0);
+}
+
+public function test_facture_creation_requires_invoice_date(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = \Illuminate\Support\Facades\DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Facture Date Validation',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    \Illuminate\Support\Facades\DB::table('products')->insert([
+        'Category_ID' => $categoryId,
+        'code' => 'P-FAC-DATE-001',
+        'Referonce' => 'REF-FAC-DATE-001',
+        'Designation' => 'Produit Facture Date Validation',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Date Validation',
+            // 'invoice_date' ناقصة هنا
+            'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [
+                [
+                    'referonce' => 'REF-FAC-DATE-001',
+                    'designation' => 'Produit Facture Date Validation',
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['invoice_date']);
+
+    $this->assertDatabaseCount('factures', 0);
+}
+
+public function test_facture_creation_requires_items(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Items Validation',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            // 'items' ناقصة هنا
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items']);
+
+    $this->assertDatabaseCount('factures', 0);
+}
+public function test_facture_item_requires_referonce(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Reference Validation',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [
+                [
+                    // 'referonce' ناقصة هنا
+                    'designation' => 'Produit Sans Référence',
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items.0.referonce']);
+
+    $this->assertDatabaseCount('factures', 0);
+}
+public function test_facture_item_requires_designation(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Designation Validation',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [
+                [
+                    'referonce' => 'REF-FAC-DES-001',
+                    // 'designation' ناقصة هنا
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items.0.designation']);
+
+    $this->assertDatabaseCount('factures', 0);
+}
+public function test_facture_item_requires_price(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Price Validation',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [
+                [
+                    'referonce' => 'REF-FAC-PRICE-001',
+                    'designation' => 'Produit Price Validation',
+                    // 'price' ناقصة هنا
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items.0.price']);
+
+    $this->assertDatabaseCount('factures', 0);
+}
+public function test_facture_item_requires_quantity(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Quantity Validation',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'items' => [
+                [
+                    'referonce' => 'REF-FAC-QTY-001',
+                    'designation' => 'Produit Quantity Validation',
+                    'price' => 150,
+                    // 'quantity' ناقصة هنا
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors(['items.0.quantity']);
+
+    $this->assertDatabaseCount('factures', 0);
+}
+
 }
