@@ -712,4 +712,92 @@ public function test_update_facture_rejects_paid_amount_greater_than_total(): vo
         'Quantite' => 8,
     ]);
 }
+public function test_update_cancelled_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Cancelled Update Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $productId = DB::table('products')->insertGetId([
+        'Category_ID' => $categoryId,
+        'code' => 'P-UPD-CANCEL-001',
+        'Referonce' => 'REF-UPD-CANCEL-001',
+        'Designation' => 'Produit Cancelled Update Test',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 5,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-UPD-CANCEL-001',
+        'client_name' => 'Client Cancelled Update Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'annulée',
+        'paid_amount' => 0,
+        'remaining_amount' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('facture_items')->insert([
+        'facture_id' => $factureId,
+        'referonce' => 'REF-UPD-CANCEL-001',
+        'designation' => 'Produit Cancelled Update Test',
+        'price' => 150,
+        'quantity' => 2,
+        'line_total' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->put(route('factures.update', $factureId), [
+            'customer_search' => 'Client Modified',
+            'invoice_date' => now()->toDateString(),
+            'paid_amount' => 0,
+            'items' => [
+                [
+                    'referonce' => 'REF-UPD-CANCEL-001',
+                    'designation' => 'Produit Cancelled Update Test',
+                    'price' => 150,
+                    'quantity' => 4,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    // Facture خاصها تبقى annulée وما تبدلش
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'client_name' => 'Client Cancelled Update Test',
+        'total' => 300,
+        'status' => 'annulée',
+        'paid_amount' => 0,
+        'remaining_amount' => 0,
+    ]);
+
+    // Item خاصو يبقى quantity = 2
+    $this->assertDatabaseHas('facture_items', [
+        'facture_id' => $factureId,
+        'referonce' => 'REF-UPD-CANCEL-001',
+        'quantity' => 2,
+        'line_total' => 300,
+    ]);
+
+    // Stock ما خاصوش يتبدل
+    $this->assertDatabaseHas('products', [
+        'id' => $productId,
+        'Quantite' => 5,
+    ]);
+}
 }
