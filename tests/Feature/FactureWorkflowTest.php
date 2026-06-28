@@ -867,4 +867,43 @@ public function test_add_payment_updates_facture_to_partially_paid(): void
         'status' => 'partiellement payée',
     ]);
 }
+public function test_add_full_payment_updates_facture_to_paid(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-FULL-PAYMENT-001',
+        'client_name' => 'Client Full Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'non payée',
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('payments.store', $factureId), [
+            'amount' => 300,
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement complet test',
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('payments', [
+        'facture_id' => $factureId,
+        'amount' => 300,
+        'note' => 'Paiement complet test',
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'paid_amount' => 300,
+        'remaining_amount' => 0,
+        'status' => 'payée',
+    ]);
+}
 }
