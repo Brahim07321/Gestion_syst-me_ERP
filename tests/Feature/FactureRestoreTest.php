@@ -1,70 +1,94 @@
-name: Laravel CI
+<?php
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+namespace Tests\Feature;
 
-jobs:
-  tests:
-    runs-on: ubuntu-latest
+use Tests\TestCase;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_DATABASE: stock_test
-          MYSQL_ROOT_PASSWORD: root
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+class FactureRestoreTest extends TestCase
+{
+    use RefreshDatabase;
 
-    env:
-      APP_ENV: testing
-      APP_KEY: base64:SomeRandomKeyHereSomeRandomKeyHereSomeRandomKey=
-      APP_DEBUG: true
-      APP_URL: http://127.0.0.1
+    private function adminUser(): User
+    {
+        $this->seed();
 
-      DB_CONNECTION: mysql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      DB_DATABASE: stock_test
-      DB_USERNAME: root
-      DB_PASSWORD: root
+        return User::where('role', 'admin')->firstOrFail();
+    }
 
-      CACHE_STORE: array
-      SESSION_DRIVER: array
-      QUEUE_CONNECTION: sync
-      MAIL_MAILER: array
-      BROADCAST_CONNECTION: log
-      FILESYSTEM_DISK: local
+    public function test_restore_cancelled_facture_decreases_stock_and_reactivates_facture(): void
+    {
+        $admin = $this->adminUser();
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+        $categoryId = DB::table('categories')->insertGetId([
+            'Category' => 'Catégorie Test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, bcmath, pdo_mysql, xml, ctype, fileinfo, tokenizer
-          coverage: none
+        $productId = DB::table('products')->insertGetId([
+            'Category_ID' => $categoryId,
+            'code' => 'P002',
+            'Referonce' => 'REF-FAC-001',
+            'Designation' => 'Produit Facture Test',
+            'prace_bay' => 100,
+            'prace_sell' => 150,
+            'Quantite' => 10,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        $factureId = DB::table('factures')->insertGetId([
+            'code_facture' => 'FAC-TEST-001',
+            'client_name' => 'Client Test',
+            'total' => 750,
+            'date_facture' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'status' => 'annulée',
+            'paid_amount' => 0,
+            'remaining_amount' => 0,
+            'deleted_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-      - name: Prepare Laravel
-        run: |
-          cp .env.example .env
-          php artisan config:clear
+        DB::table('facture_items')->insert([
+            'facture_id' => $factureId,
+            'referonce' => 'REF-FAC-001',
+            'designation' => 'Produit Facture Test',
+            'price' => 150,
+            'quantity' => 5,
+            'line_total' => 750,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-      - name: Run migrations
-        run: php artisan migrate:fresh --force
+        $response = $this->actingAs($admin)
+            ->post(route('documents.archives.facture.restore', $factureId));
 
-      - name: Run tests
-        run: php artisan test
+        $response->assertStatus(302);
+
+        $this->assertDatabaseHas('products', [
+            'id' => $productId,
+            'Quantite' => 5,
+        ]);
+
+        $this->assertDatabaseHas('factures', [
+            'id' => $factureId,
+            'status' => 'non payée',
+            'paid_amount' => 0,
+            'remaining_amount' => 750,
+            'deleted_at' => null,
+        ]);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'product_id' => $productId,
+            'type' => 'sortie',
+            'quantity' => 5,
+            'source' => 'restauration facture',
+            'reference' => 'FAC-TEST-001',
+        ]);
+    }
+}
