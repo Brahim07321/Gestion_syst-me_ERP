@@ -15,6 +15,10 @@ use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\PurchaseImportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CompanySettingController;
+use App\Http\Controllers\OpenAiInvoiceImportController;
+use App\Http\Controllers\ArchiveDocumentController;
+
+
 
 
 
@@ -33,6 +37,21 @@ Route::get('/dashboard', [FactureController::class, 'dashboard'])
 
 // جميع routes محمية
 Route::middleware('auth')->group(function () {
+
+
+
+
+    // =========================
+// IMPORT FACTURE IMAGE - OPENAI
+// =========================
+Route::get('/purchases/import-ai', [OpenAiInvoiceImportController::class, 'create'])
+->name('purchases.import.ai.create');
+
+Route::post('/purchases/import-ai/preview', [OpenAiInvoiceImportController::class, 'preview'])
+->name('purchases.import.ai.preview');
+
+Route::post('/purchases/import-ai/confirm', [OpenAiInvoiceImportController::class, 'confirm'])
+->name('purchases.import.ai.confirm');
 
 
 
@@ -166,6 +185,26 @@ Route::delete('/payments/{id}', [PaymentController::class, 'destroy'])->name('pa
     Route::get('/profile', function () {
         return redirect()->route('settings.company.edit');
     })->name('profile.edit');
+
+    //================================
+    //  ArchiveDocument
+    //===============================
+
+
+
+
+Route::get('/documents-archives', [ArchiveDocumentController::class, 'index'])
+    ->name('documents.archives');
+
+
+Route::get('/documents-archives', [ArchiveDocumentController::class, 'index'])
+    ->name('documents.archives');
+
+Route::post('/documents-archives/facture/{id}/restore', [ArchiveDocumentController::class, 'restoreFacture'])
+    ->name('documents.archives.facture.restore');
+
+Route::post('/documents-archives/purchase/{id}/restore', [ArchiveDocumentController::class, 'restorePurchase'])
+    ->name('documents.archives.purchase.restore');
 });
 
 // auth routes

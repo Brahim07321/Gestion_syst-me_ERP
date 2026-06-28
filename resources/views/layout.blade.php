@@ -318,6 +318,7 @@
                     <i class="fas fa-exchange-alt"></i> Historique Stock
                 </li>
             </a>
+           
 
             <a href="/suppliers">
                 <li class="{{ request()->is('suppliers') || request()->is('suppliers/*') ? 'active' : '' }}">

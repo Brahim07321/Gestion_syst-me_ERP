@@ -30,10 +30,11 @@ class FactureController extends Controller
         $status = $request->status ?? '';
         $dateFrom = $request->date_from;
         $dateTo = $request->date_to;
-    
+
         $factures = Facture::query()
-        ->when($search, function ($query) use ($search) {
-            $query->where(function ($q) use ($search) {
+        ->where('status', '!=', 'annulée')
+        ->when($search, function ($query) use ($search) {           
+             $query->where(function ($q) use ($search) {
                 $q->whereRaw('LOWER(code_facture) LIKE ?', ["%{$search}%"])
                   ->orWhereRaw('LOWER(client_name) LIKE ?', ["%{$search}%"])
                   ->orWhereRaw('LOWER(status) LIKE ?', ["%{$search}%"]);

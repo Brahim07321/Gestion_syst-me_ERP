@@ -104,8 +104,7 @@
                                     <option value="partiellement payée"
                                         {{ request('status') == 'partiellement payée' ? 'selected' : '' }}>Partielle
                                     </option>
-                                    <option value="annulée" {{ request('status') == 'annulée' ? 'selected' : '' }}>Annulée
-                                    </option>
+                                  
                                 </select>
                             </div>
 

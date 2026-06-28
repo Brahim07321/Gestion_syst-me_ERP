@@ -121,6 +121,21 @@
             </div>
         @endif
 
+        @if (request('from_archive'))
+            @if (!empty($facture->deleted_at))
+                <div class="alert alert-danger border-0 shadow-sm rounded-4">
+                    <i class="fas fa-trash me-2"></i>
+                    Cette facture est supprimée.
+                    Date suppression : {{ $facture->deleted_at->format('Y-m-d H:i') }}
+                </div>
+            @elseif($facture->status === 'annulée')
+                <div class="alert alert-warning border-0 shadow-sm rounded-4">
+                    <i class="fas fa-ban me-2"></i>
+                    Cette facture est annulée.
+                </div>
+            @endif
+        @endif
+
         <div class="row mb-4 p-3 shadow-sm rounded" style="background:#f8f9fa;">
 
             <div class="col-md-3 border-end">
@@ -129,7 +144,7 @@
                     value="{{ $facture->client_name }}" readonly>
             </div>
 
-           
+
 
 
 
@@ -142,7 +157,8 @@
             <div class="col-md-3 border-end">
                 <label class="text-muted small">Date d'échéance</label>
                 <input type="text" class="form-control readonly-input border-0 bg-transparent fw-bold"
-                    value="{{ $facture->due_date ? \Carbon\Carbon::parse($facture->due_date)->format('d/m/Y') : '-' }}" readonly>
+                    value="{{ $facture->due_date ? \Carbon\Carbon::parse($facture->due_date)->format('d/m/Y') : '-' }}"
+                    readonly>
             </div>
 
             <div class="col-md-3">
@@ -359,10 +375,10 @@
             const companyAddress = @json($company->address ?? '');
             const companyPhone = @json($company->phone ?? '0661247414');
             const companyEmail = @json($company->email ?? '');
-            const footerNote = @json($company->footer_note ?? 
-            'Notre société est spécialisée dans la vente de pièces pour machines industrielles. Nous nous engageons à fournir des produits de qualité, fiables et adaptés à vos besoins.Nous vous remercions pour votre confiance.');
-            const footerContact = @json(
-                $company->footer_contact ?? 'Tell: 0661247414  || 0680661043');
+            const footerNote = @json(
+                $company->footer_note ??
+                    'Notre société est spécialisée dans la vente de pièces pour machines industrielles. Nous nous engageons à fournir des produits de qualité, fiables et adaptés à vos besoins.Nous vous remercions pour votre confiance.');
+            const footerContact = @json($company->footer_contact ?? 'Tell: 0661247414  || 0680661043');
 
             const img = new Image();
             img.crossOrigin = 'anonymous';

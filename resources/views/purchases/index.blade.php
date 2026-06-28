@@ -55,6 +55,13 @@
                                 Importer Excel
                             </button>
                         </li>
+                        <li>
+                            <a href="{{ route('purchases.import.ai.create') }}" 
+                            class="dropdown-item rounded-3 d-flex align-items-center gap-2"
+                            >
+                                <i class="fas fa-wand-magic-sparkles"></i> Import Facture AI
+                            </a>
+                        </li>
         
                     </ul>
         

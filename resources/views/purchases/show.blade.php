@@ -49,6 +49,18 @@
                     </div>
                 @endif
 
+                
+
+                @if (request('from_archive'))
+                    @if (!empty($purchase->deleted_at))
+                        <div class="alert alert-danger border-0 shadow-sm rounded-4">
+                            <i class="fas fa-trash me-2"></i>
+                            Ce bon d’achat est supprimé.
+                            Date suppression : {{ $purchase->deleted_at->format('Y-m-d H:i') }}
+                        </div>
+                    @endif
+                @endif
+
                 <!-- INFORMATIONS -->
                 <div class="row g-3 mb-4 ">
                     <div class="col-md-4">
@@ -305,9 +317,9 @@
                 const rows = [];
                 document.querySelectorAll('#purchase-items-list tr').forEach(row => {
                     const referonce = row.querySelector('.product-Referonce')?.textContent?.trim() ||
-                    '';
+                        '';
                     const designation = row.querySelector('.product-designation')?.textContent
-                    ?.trim() || '';
+                        ?.trim() || '';
                     const quantity = row.querySelector('.product-quantity')?.textContent?.trim() || '1';
                     const price = row.querySelector('.product-price')?.textContent?.trim() || '0.00';
                     const total = row.querySelector('.product-total')?.textContent?.trim() || '0.00';

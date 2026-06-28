@@ -1,6 +1,23 @@
 @extends('layout')
 
 @section('content')
+<style>
+    .designation-cell {
+    max-width: 160px;
+    margin: auto;
+    text-align: left;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;      /* غير جوج سطور */
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
+}
+</style>
     <div class="main-content main-content-expanded" id="mainContent">
 
         <!-- TITRE -->
@@ -120,8 +137,12 @@
                                     <td class="fw-semibold text-primary">{{ $product->Referonce }}</td>
                                     <td>{{ $product->code }}</td>
                                     <td>{{ $product->category_name ?? '-' }}</td>
-                                    <td>{{ $product->Designation }}</td>
-                                    <td>{{ number_format($product->prace_bay, 2) }} DH</td>
+                                    <td>
+                                        <div class="designation-cell" title="{{ $product->Designation }}">
+                                            {{ $product->Designation }}
+                                        </div>
+                                    </td>
+                                     <td>{{ number_format($product->prace_bay, 2) }} DH</td>
                                     <td>{{ number_format($product->prace_sell, 2) }} DH</td>
                                     <td class="product-quantity fw-semibold">
                                         {{ $product->Quantite }}

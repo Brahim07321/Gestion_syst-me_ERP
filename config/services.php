@@ -15,7 +15,13 @@ return [
     */
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
-        'model' => env('OPENAI_MODEL', 'gpt-5.5'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+    ],
+
+    'nvidia' => [
+        'key' => env('NVIDIA_API_KEY'),
+        'base_url' => env('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1'),
+        'model' => env('NVIDIA_MODEL', 'nvidia/llama-3.1-nemotron-nano-vl-8b-v1'),
     ],
 
     'postmark' => [

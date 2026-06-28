@@ -31,6 +31,14 @@
                             Exporter PDF
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('documents.archives') }}"    class="dropdown-item rounded-3 d-flex align-items-center gap-2">
+
+
+
+                            <i class="fas fa-box-archive me-2"></i>Documents archivés
+                        </a>
+                    </li>
         
                 </ul>
         
@@ -148,8 +156,11 @@
                                     {{ \Carbon\Carbon::parse($movement->created_at)->format('d/m/Y H:i') }}
                                 </td>
 
+                                
                                 <td>
-                                    {{ $movement->product->Designation ?? '-' }}
+                                    <div class="designation-cell">
+                                        {{ $movement->product->Designation ?? '-' }}
+                                    </div>
                                 </td>
 
                                 <td>
@@ -277,5 +288,21 @@
     .bg-secondary-subtle {
         background: #f1f5f9;
     }
+
+    .designation-cell {
+    max-width: 160px;
+    margin: auto;
+    text-align: left;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;      /* غير جوج سطور */
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
+}
 </style>
 @endsection

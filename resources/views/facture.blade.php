@@ -180,8 +180,6 @@ data-bs-toggle="modal" data-bs-target="#addClientModal">
 </div>
 </div>
 
-<!-- Bootstrap JS - ila mkaynch déjà -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 
 
@@ -194,11 +192,22 @@ data-bs-toggle="modal" data-bs-target="#addClientModal">
             <div class="row mb-4">
                 <div class="col-md-6">
                     <label for="customer_search">Client</label>
-                    <input type="text" id="customer_search" name="customer_search" class="form-control"
-                        list="customers-list" placeholder="Rechercher un client..." required>
+                
+                    <input type="text"
+                           id="customer_search"
+                           name="customer_search"
+                           class="form-control"
+                           list="customers-list"
+                           placeholder="Rechercher un client..."
+                           autocomplete="off"
+                           required>
+                
                     <input type="hidden" name="customer_id" id="customer_id">
+                
+                    <small id="customer-error" class="text-danger d-none">
+                        ⚠ Choisis un client موجود فـ base donnée.
+                    </small>
                 </div>
-
                 <div class="col-md-3">
                     <label for="invoice_date">Date Facture</label>
                     <input type="date" name="invoice_date" value="{{ old('invoice_date', date('Y-m-d')) }}"
@@ -294,12 +303,16 @@ data-bs-toggle="modal" data-bs-target="#addClientModal">
             </div>
         </form>
     </div>
+    <!-- Bootstrap JS - ila mkaynch déjà -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <script>
+
         document.addEventListener('DOMContentLoaded', function() {
 
             const itemsList = document.getElementById('items-list');
@@ -359,43 +372,70 @@ data-bs-toggle="modal" data-bs-target="#addClientModal">
     return null;
 }
 
-            // =========================
-            // GET CLIENT
-            // =========================
-            function getClient(name) {
-                const options = document.querySelectorAll('#customers-list option');
+// =========================
+// GET CLIENT FROM DATABASE LIST
+// =========================
+function getClient(name) {
+    const options = document.querySelectorAll('#customers-list option');
+    const value = (name || '').trim().toLowerCase();
 
-                for (let opt of options) {
-                    if (opt.value === name) {
-                        return {
-                            id: opt.dataset.id,
-                            address: opt.dataset.address || ''
-                        };
-                    }
-                }
+    if (!value) return null;
 
-                return null;
-            }
+    for (let opt of options) {
+        if ((opt.value || '').trim().toLowerCase() === value) {
+            return {
+                id: opt.dataset.id,
+                name: opt.value,
+                address: opt.dataset.address || ''
+            };
+        }
+    }
 
-            // =========================
-            // CLIENT SEARCH
-            // =========================
-            const customerSearch = document.getElementById('customer_search');
-            const customerId = document.getElementById('customer_id');
-            const customerAddress = document.getElementById('customer_address');
+    return null;
+}
 
-            customerSearch.addEventListener('input', function() {
-                const client = getClient(this.value);
+// =========================
+// CLIENT SEARCH
+// =========================
+const customerSearch = document.getElementById('customer_search');
+const customerId = document.getElementById('customer_id');
+const customerError = document.getElementById('customer-error');
 
-                if (client) {
-                    customerId.value = client.id;
-                    customerAddress.value = client.address;
-                } else {
-                    customerId.value = '';
-                    customerAddress.value = '';
-                }
-            });
+customerSearch.addEventListener('input', function () {
+    const client = getClient(this.value);
 
+    if (client) {
+        customerId.value = client.id;
+        customerError.classList.add('d-none');
+        customerSearch.classList.remove('is-invalid');
+    } else {
+        customerId.value = '';
+        customerError.classList.remove('d-none');
+        customerSearch.classList.add('is-invalid');
+    }
+
+
+    calculateTotals();
+
+});
+
+document.getElementById('invoiceForm').addEventListener('submit', function (e) {
+    const client = getClient(customerSearch.value);
+
+    if (!client) {
+        e.preventDefault();
+
+        customerId.value = '';
+        customerError.classList.remove('d-none');
+        customerSearch.classList.add('is-invalid');
+        customerSearch.focus();
+
+        alert('⚠ Choisis un client موجود فـ base donnée.');
+        return false;
+    }
+
+    customerId.value = client.id;
+});
             // =========================
             // PRODUCT SELECT + STOCK CHECK
             // =========================
