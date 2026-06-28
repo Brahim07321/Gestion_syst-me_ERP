@@ -144,5 +144,26 @@ public function test_products_template_download_works(): void
     $response->assertStatus(200);
     $response->assertHeader('content-disposition');
 }
+public function test_stock_movements_excel_export_works(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->get(route('stock.movements.export.excel'));
+
+    $response->assertStatus(200);
+    $response->assertHeader('content-disposition');
+}
+
+public function test_stock_movements_pdf_export_works(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->get(route('stock.movements.export.pdf'));
+
+    $response->assertStatus(200);
+    $response->assertHeader('content-disposition');
+}
 
 }
