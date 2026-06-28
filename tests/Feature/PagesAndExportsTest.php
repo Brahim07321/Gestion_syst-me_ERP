@@ -186,5 +186,14 @@ public function test_suppliers_export_works(): void
     $response->assertStatus(200);
     $response->assertHeader('content-disposition');
 }
+public function test_ai_purchase_import_page_opens(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->get(route('purchases.import.ai.create'));
+
+    $response->assertStatus(200);
+}
 
 }
