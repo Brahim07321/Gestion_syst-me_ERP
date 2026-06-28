@@ -828,4 +828,43 @@ public function test_edit_cancelled_facture_is_rejected(): void
         'status' => 'annulée',
     ]);
 }
+public function test_add_payment_updates_facture_to_partially_paid(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-PAYMENT-001',
+        'client_name' => 'Client Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'non payée',
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('payments.store', $factureId), [
+            'amount' => 100,
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement test',
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('payments', [
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'note' => 'Paiement test',
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'paid_amount' => 100,
+        'remaining_amount' => 200,
+        'status' => 'partiellement payée',
+    ]);
+}
 }
