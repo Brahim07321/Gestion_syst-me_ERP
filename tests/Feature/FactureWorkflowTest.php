@@ -156,7 +156,7 @@ public function test_cancel_facture_restores_stock_and_marks_as_cancelled(): voi
     $admin = $this->adminUser();
 
     $categoryId = DB::table('categories')->insertGetId([
-        'Category' => 'Catégorie Test',
+        'Category' => 'Catégorie Cancel Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -202,13 +202,11 @@ public function test_cancel_facture_restores_stock_and_marks_as_cancelled(): voi
 
     $response->assertStatus(302);
 
-    // Stock كان 5، ملي facture تلغات خاصو يرجع +5 = 10
     $this->assertDatabaseHas('products', [
         'id' => $productId,
         'Quantite' => 10,
     ]);
 
-    // Facture خاصها تولي annulée
     $this->assertDatabaseHas('factures', [
         'id' => $factureId,
         'status' => 'annulée',
@@ -216,7 +214,6 @@ public function test_cancel_facture_restores_stock_and_marks_as_cancelled(): voi
         'remaining_amount' => 0,
     ]);
 
-    // Stock movement ديال annulation facture
     $this->assertDatabaseHas('stock_movements', [
         'product_id' => $productId,
         'type' => 'entree',
@@ -224,8 +221,7 @@ public function test_cancel_facture_restores_stock_and_marks_as_cancelled(): voi
         'source' => 'annulation facture',
         'reference' => 'FAC-CANCEL-001',
     ]);
-}
-public function test_deleted_cancelled_facture_appears_in_documents_archives(): void
+}public function test_deleted_cancelled_facture_appears_in_documents_archives(): void
 {
     $admin = $this->adminUser();
 
@@ -493,5 +489,60 @@ public function test_create_facture_without_payment_marks_as_unpaid(): void
     $this->assertDatabaseMissing('payments', [
         'note' => 'Paiement initial',
     ]);
+}
+public function test_facture_edit_page_opens(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Edit Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('products')->insert([
+        'Category_ID' => $categoryId,
+        'code' => 'P-EDIT-001',
+        'Referonce' => 'REF-EDIT-001',
+        'Designation' => 'Produit Edit Test',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-EDIT-001',
+        'client_name' => 'Client Edit Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'non payée',
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('facture_items')->insert([
+        'facture_id' => $factureId,
+        'referonce' => 'REF-EDIT-001',
+        'designation' => 'Produit Edit Test',
+        'price' => 150,
+        'quantity' => 2,
+        'line_total' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+    ->get(route('factures.edit', $factureId));
+
+
+$response->assertStatus(200);
+$response->assertSee('Modifier la facture');
+$response->assertSee('FAC-EDIT-001');
+$response->assertSee('REF-EDIT-001');
 }
 }
