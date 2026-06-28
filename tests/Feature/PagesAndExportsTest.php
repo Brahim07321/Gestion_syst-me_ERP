@@ -195,5 +195,15 @@ public function test_ai_purchase_import_page_opens(): void
 
     $response->assertStatus(200);
 }
+public function test_ai_purchase_import_preview_requires_file(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('purchases.import.ai.preview'), []);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors();
+}
 
 }
