@@ -545,4 +545,91 @@ $response->assertSee('Modifier la facture');
 $response->assertSee('FAC-EDIT-001');
 $response->assertSee('REF-EDIT-001');
 }
+
+public function test_update_facture_changes_quantity_and_recalculates_stock(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Update Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $productId = DB::table('products')->insertGetId([
+        'Category_ID' => $categoryId,
+        'code' => 'P-UPD-FAC-001',
+        'Referonce' => 'REF-UPD-FAC-001',
+        'Designation' => 'Produit Update Facture',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        // stock الحالي 8 حيث facture القديمة كانت باعت 2
+        'Quantite' => 8,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-UPD-001',
+        'client_name' => 'Client Update Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'non payée',
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('facture_items')->insert([
+        'facture_id' => $factureId,
+        'referonce' => 'REF-UPD-FAC-001',
+        'designation' => 'Produit Update Facture',
+        'price' => 150,
+        'quantity' => 2,
+        'line_total' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->put(route('factures.update', $factureId), [
+            'customer_search' => 'Client Update Test',
+            'invoice_date' => now()->toDateString(),
+            'paid_amount' => 0,
+            'items' => [
+                [
+                    'referonce' => 'REF-UPD-FAC-001',
+                    'designation' => 'Produit Update Facture',
+                    'price' => 150,
+                    'quantity' => 4,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+
+    // Ancien stock 8 + ancienne quantité 2 = 10
+    // Nouvelle quantité 4 => stock final 6
+    $this->assertDatabaseHas('products', [
+        'id' => $productId,
+        'Quantite' => 6,
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'total' => 600,
+        'paid_amount' => 0,
+        'remaining_amount' => 600,
+        'status' => 'non payée',
+    ]);
+
+    $this->assertDatabaseHas('facture_items', [
+        'facture_id' => $factureId,
+        'referonce' => 'REF-UPD-FAC-001',
+        'quantity' => 4,
+        'line_total' => 600,
+    ]);
+}
 }
