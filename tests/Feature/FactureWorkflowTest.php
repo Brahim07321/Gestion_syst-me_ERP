@@ -389,4 +389,57 @@ public function test_create_facture_with_partial_payment_marks_as_partially_paid
         'note' => 'Paiement initial',
     ]);
 }
+public function test_create_facture_with_full_payment_marks_as_paid(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Paiement Total Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('products')->insert([
+        'Category_ID' => $categoryId,
+        'code' => 'P-FULL-PAY-001',
+        'Referonce' => 'REF-FULL-PAY-001',
+        'Designation' => 'Produit Paiement Total Test',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('facture.store'), [
+            'customer_search' => 'Client Paiement Total Test',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'paid_amount' => 300,
+            'items' => [
+                [
+                    'referonce' => 'REF-FULL-PAY-001',
+                    'designation' => 'Produit Paiement Total Test',
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('factures', [
+        'client_name' => 'Client Paiement Total Test',
+        'total' => 300,
+        'paid_amount' => 300,
+        'remaining_amount' => 0,
+        'status' => 'payée',
+    ]);
+
+    $this->assertDatabaseHas('payments', [
+        'amount' => 300,
+        'note' => 'Paiement initial',
+    ]);
+}
 }
