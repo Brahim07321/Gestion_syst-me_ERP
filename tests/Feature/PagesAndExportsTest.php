@@ -113,4 +113,25 @@ public function test_customers_pdf_export_works(): void
     $response->assertStatus(200);
     $response->assertHeader('content-disposition');
 }
+public function test_purchases_excel_export_works(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->get(route('purchases.export.excel'));
+
+    $response->assertStatus(200);
+    $response->assertHeader('content-disposition');
+}
+
+public function test_purchases_pdf_export_works(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->get(route('purchases.export.pdf'));
+
+    $response->assertStatus(200);
+    $response->assertHeader('content-disposition');
+}
 }
