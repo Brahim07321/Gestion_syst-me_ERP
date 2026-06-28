@@ -906,4 +906,44 @@ public function test_add_full_payment_updates_facture_to_paid(): void
         'status' => 'payée',
     ]);
 }
+
+public function test_add_payment_greater_than_remaining_amount_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-PAY-OVER-001',
+        'client_name' => 'Client Payment Over Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'partiellement payée',
+        'paid_amount' => 100,
+        'remaining_amount' => 200,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('payments.store', $factureId), [
+            'amount' => 250, // remaining هو غير 200
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement trop grand test',
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseMissing('payments', [
+        'facture_id' => $factureId,
+        'amount' => 250,
+        'note' => 'Paiement trop grand test',
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'paid_amount' => 100,
+        'remaining_amount' => 200,
+        'status' => 'partiellement payée',
+    ]);
+}
 }

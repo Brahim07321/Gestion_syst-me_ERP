@@ -16,47 +16,60 @@ class PaymentController extends Controller
             'payment_date' => 'required|date',
             'note' => 'nullable|string|max:255',
         ]);
-
+    
         $facture = Facture::withTrashed()->findOrFail($id);
-
+    
         if ($facture->trashed() || $facture->status === 'annulée') {
             return back()->with('error', 'Impossible d’ajouter un paiement à cette facture.');
         }
-
+    
         if ($facture->status === 'payée') {
             return back()->with('error', 'Cette facture est déjà payée.');
         }
-
-        $alreadyPaid = $facture->payments()->sum('amount');
-        $remaining = $facture->total - $alreadyPaid;
-
-        if ((float) $request->amount > $remaining) {
-            return back()->with('error', 'Le montant dépasse le reste à payer.');
+    
+        $amount = (float) $request->amount;
+        $remaining = (float) $facture->remaining_amount;
+    
+        if ($amount > $remaining) {
+            return back()
+                ->withInput()
+                ->with('error', 'Le montant dépasse le reste à payer.');
         }
-
-        Payment::create([
-            'facture_id' => $facture->id,
-            'amount' => $request->amount,
-            'payment_date' => $request->payment_date,
-            'note' => $request->note,
-        ]);
-
-        $newTotalPaid = $facture->payments()->sum('amount');
-        $newRemaining = $facture->total - $newTotalPaid;
-
-        if ($newRemaining <= 0) {
-            $facture->status = 'payée';
-        } elseif ($newTotalPaid > 0) {
-            $facture->status = 'partiellement payée';
-        } else {
-            $facture->status = 'non payée';
+    
+        DB::beginTransaction();
+    
+        try {
+            Payment::create([
+                'facture_id' => $facture->id,
+                'amount' => $amount,
+                'payment_date' => $request->payment_date,
+                'note' => $request->note,
+            ]);
+    
+            $newTotalPaid = (float) $facture->paid_amount + $amount;
+            $newRemaining = max((float) $facture->total - $newTotalPaid, 0);
+    
+            if ($newRemaining <= 0) {
+                $status = 'payée';
+            } elseif ($newTotalPaid > 0) {
+                $status = 'partiellement payée';
+            } else {
+                $status = 'non payée';
+            }
+    
+            $facture->update([
+                'paid_amount' => $newTotalPaid,
+                'remaining_amount' => $newRemaining,
+                'status' => $status,
+            ]);
+    
+            DB::commit();
+    
+            return back()->with('success', 'Paiement ajouté avec succès.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
         }
-
-        $facture->paid_amount = $newTotalPaid;
-        $facture->remaining_amount = max($newRemaining, 0);
-        $facture->save();
-
-        return back()->with('success', 'Paiement ajouté avec succès.');
     }
 
     public function update(Request $request, $id)
