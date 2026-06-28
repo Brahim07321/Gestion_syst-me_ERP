@@ -632,4 +632,84 @@ public function test_update_facture_changes_quantity_and_recalculates_stock(): v
         'line_total' => 600,
     ]);
 }
+
+public function test_update_facture_rejects_paid_amount_greater_than_total(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Update Paid Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $productId = DB::table('products')->insertGetId([
+        'Category_ID' => $categoryId,
+        'code' => 'P-UPD-PAID-001',
+        'Referonce' => 'REF-UPD-PAID-001',
+        'Designation' => 'Produit Update Paid Test',
+        'prace_bay' => 100,
+        'prace_sell' => 150,
+        'Quantite' => 8,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-UPD-PAID-001',
+        'client_name' => 'Client Update Paid Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'non payée',
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('facture_items')->insert([
+        'facture_id' => $factureId,
+        'referonce' => 'REF-UPD-PAID-001',
+        'designation' => 'Produit Update Paid Test',
+        'price' => 150,
+        'quantity' => 2,
+        'line_total' => 300,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->put(route('factures.update', $factureId), [
+            'customer_search' => 'Client Update Paid Test',
+            'invoice_date' => now()->toDateString(),
+            'paid_amount' => 500, // total هو غير 300
+            'items' => [
+                [
+                    'referonce' => 'REF-UPD-PAID-001',
+                    'designation' => 'Produit Update Paid Test',
+                    'price' => 150,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    // Facture خاصها تبقى كيف كانت
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'total' => 300,
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'status' => 'non payée',
+    ]);
+
+    // Stock ما خاصوش يتبدل
+    $this->assertDatabaseHas('products', [
+        'id' => $productId,
+        'Quantite' => 8,
+    ]);
+}
 }
