@@ -69,4 +69,24 @@ public function test_guest_cannot_access_reports_page(): void
 
     $response->assertRedirect(route('login'));
 }
+public function test_guest_cannot_access_expenses_page(): void
+{
+    $response = $this->get('/expenses');
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_stock_movements_page(): void
+{
+    $response = $this->get(route('stock.movements'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_ai_purchase_import_page(): void
+{
+    $response = $this->get(route('purchases.import.ai.create'));
+
+    $response->assertRedirect(route('login'));
+}
 }
