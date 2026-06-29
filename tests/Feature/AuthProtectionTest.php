@@ -29,4 +29,24 @@ class AuthProtectionTest extends TestCase
 
         $response->assertRedirect(route('login'));
     }
+    public function test_guest_cannot_access_factures_page(): void
+{
+    $response = $this->get(route('factures.index'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_customers_page(): void
+{
+    $response = $this->get(route('customers.index'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_suppliers_page(): void
+{
+    $response = $this->get(route('suppliers.index'));
+
+    $response->assertRedirect(route('login'));
+}
 }
