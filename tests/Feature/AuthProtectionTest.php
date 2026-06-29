@@ -49,4 +49,24 @@ public function test_guest_cannot_access_suppliers_page(): void
 
     $response->assertRedirect(route('login'));
 }
+public function test_guest_cannot_access_stock_page(): void
+{
+    $response = $this->get(route('stock.index'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_documents_archives_page(): void
+{
+    $response = $this->get(route('documents.archives'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_reports_page(): void
+{
+    $response = $this->get(route('reports'));
+
+    $response->assertRedirect(route('login'));
+}
 }
