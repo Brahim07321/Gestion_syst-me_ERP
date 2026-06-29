@@ -89,4 +89,24 @@ public function test_guest_cannot_access_ai_purchase_import_page(): void
 
     $response->assertRedirect(route('login'));
 }
+public function test_guest_cannot_access_factures_excel_export(): void
+{
+    $response = $this->get(route('factures.export.excel'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_factures_pdf_export(): void
+{
+    $response = $this->get(route('factures.export.pdf'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_purchases_excel_export(): void
+{
+    $response = $this->get(route('purchases.export.excel'));
+
+    $response->assertRedirect(route('login'));
+}
 }
