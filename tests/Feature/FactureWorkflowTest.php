@@ -1026,4 +1026,49 @@ public function test_add_payment_to_cancelled_facture_is_rejected(): void
         'remaining_amount' => 0,
     ]);
 }
+public function test_add_payment_to_deleted_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-DELETED-PAYMENT-001',
+        'client_name' => 'Client Deleted Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'non payée',
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'deleted_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('payments.store', $factureId), [
+            'amount' => 100,
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement sur facture supprimée',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseMissing('payments', [
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'note' => 'Paiement sur facture supprimée',
+    ]);
+
+    $this->assertSoftDeleted('factures', [
+        'id' => $factureId,
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'status' => 'non payée',
+    ]);
+}
 }
