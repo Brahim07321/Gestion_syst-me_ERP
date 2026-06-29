@@ -1071,4 +1071,46 @@ public function test_add_payment_to_deleted_facture_is_rejected(): void
         'status' => 'non payée',
     ]);
 }
+public function test_delete_payment_recalculates_facture_to_unpaid(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-DELETE-PAYMENT-001',
+        'client_name' => 'Client Delete Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'partiellement payée',
+        'paid_amount' => 100,
+        'remaining_amount' => 200,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $paymentId = DB::table('payments')->insertGetId([
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'payment_date' => now()->toDateString(),
+        'note' => 'Paiement à supprimer test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->delete('/payments/' . $paymentId);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseMissing('payments', [
+        'id' => $paymentId,
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'status' => 'non payée',
+    ]);
+}
 }
