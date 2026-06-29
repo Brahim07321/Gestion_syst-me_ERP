@@ -1113,4 +1113,53 @@ public function test_delete_payment_recalculates_facture_to_unpaid(): void
         'status' => 'non payée',
     ]);
 }
+public function test_update_payment_recalculates_facture_to_paid(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-UPDATE-PAYMENT-001',
+        'client_name' => 'Client Update Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'partiellement payée',
+        'paid_amount' => 100,
+        'remaining_amount' => 200,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $paymentId = DB::table('payments')->insertGetId([
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'payment_date' => now()->toDateString(),
+        'note' => 'Paiement avant modification',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->put('/payments/' . $paymentId, [
+            'amount' => 300,
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement modifié complet',
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('payments', [
+        'id' => $paymentId,
+        'facture_id' => $factureId,
+        'amount' => 300,
+        'note' => 'Paiement modifié complet',
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'paid_amount' => 300,
+        'remaining_amount' => 0,
+        'status' => 'payée',
+    ]);
+}
 }
