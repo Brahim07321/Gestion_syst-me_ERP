@@ -1263,4 +1263,132 @@ public function test_update_payment_on_cancelled_facture_is_rejected(): void
         'remaining_amount' => 0,
     ]);
 }
+public function test_delete_payment_on_cancelled_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-CANCELLED-DELETE-PAYMENT-001',
+        'client_name' => 'Client Cancelled Delete Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'annulée',
+        'paid_amount' => 100,
+        'remaining_amount' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $paymentId = DB::table('payments')->insertGetId([
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'payment_date' => now()->toDateString(),
+        'note' => 'Paiement facture annulée delete',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->delete('/payments/' . $paymentId);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseHas('payments', [
+        'id' => $paymentId,
+        'amount' => 100,
+        'note' => 'Paiement facture annulée delete',
+    ]);
+}
+public function test_update_payment_on_deleted_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-DELETED-UPDATE-PAYMENT-001',
+        'client_name' => 'Client Deleted Update Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'partiellement payée',
+        'paid_amount' => 100,
+        'remaining_amount' => 200,
+        'deleted_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $paymentId = DB::table('payments')->insertGetId([
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'payment_date' => now()->toDateString(),
+        'note' => 'Paiement facture supprimée update',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->put('/payments/' . $paymentId, [
+            'amount' => 200,
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement modifié facture supprimée',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseHas('payments', [
+        'id' => $paymentId,
+        'amount' => 100,
+        'note' => 'Paiement facture supprimée update',
+    ]);
+
+    $this->assertSoftDeleted('factures', [
+        'id' => $factureId,
+    ]);
+}
+public function test_delete_payment_on_deleted_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-DELETED-DELETE-PAYMENT-001',
+        'client_name' => 'Client Deleted Delete Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'partiellement payée',
+        'paid_amount' => 100,
+        'remaining_amount' => 200,
+        'deleted_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $paymentId = DB::table('payments')->insertGetId([
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'payment_date' => now()->toDateString(),
+        'note' => 'Paiement facture supprimée delete',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->delete('/payments/' . $paymentId);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseHas('payments', [
+        'id' => $paymentId,
+        'amount' => 100,
+        'note' => 'Paiement facture supprimée delete',
+    ]);
+
+    $this->assertSoftDeleted('factures', [
+        'id' => $factureId,
+    ]);
+}
 }
