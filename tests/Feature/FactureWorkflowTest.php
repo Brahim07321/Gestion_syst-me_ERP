@@ -1213,4 +1213,54 @@ public function test_update_payment_greater_than_facture_total_is_rejected(): vo
         'status' => 'partiellement payée',
     ]);
 }
+public function test_update_payment_on_cancelled_facture_is_rejected(): void
+{
+    $admin = $this->adminUser();
+
+    $factureId = DB::table('factures')->insertGetId([
+        'code_facture' => 'FAC-CANCELLED-UPDATE-PAYMENT-001',
+        'client_name' => 'Client Cancelled Update Payment Test',
+        'total' => 300,
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'annulée',
+        'paid_amount' => 100,
+        'remaining_amount' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $paymentId = DB::table('payments')->insertGetId([
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'payment_date' => now()->toDateString(),
+        'note' => 'Paiement facture annulée',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->put('/payments/' . $paymentId, [
+            'amount' => 200,
+            'payment_date' => now()->toDateString(),
+            'note' => 'Paiement modifié facture annulée',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('error');
+
+    $this->assertDatabaseHas('payments', [
+        'id' => $paymentId,
+        'facture_id' => $factureId,
+        'amount' => 100,
+        'note' => 'Paiement facture annulée',
+    ]);
+
+    $this->assertDatabaseHas('factures', [
+        'id' => $factureId,
+        'status' => 'annulée',
+        'paid_amount' => 100,
+        'remaining_amount' => 0,
+    ]);
+}
 }
