@@ -10,12 +10,18 @@ use App\Imports\SuppliersImport;
 
 class SupplierController extends Controller
 {
-    public function index()
-    {
+   
 
-        $suppliers = Supplier::latest()->get();
-        return view('suppliers.index', compact('suppliers'));
-    }
+    public function index(Request $request)
+{
+    $search = $request->search;
+
+    $suppliers = \App\Models\Supplier::when($search, function ($query) use ($search) {
+        $query->where('name', 'like', "%{$search}%");
+    })->latest()->paginate(10);
+
+    return view('suppliers.index', compact('suppliers', 'search'));
+}
 
     public function store(Request $request)
     {
