@@ -43,9 +43,9 @@ class ProductController extends Controller
             'code' => 'required',
             'Referonce' => 'required|unique:products,Referonce',
             'Designation' => 'required',
-            'prace_bay' => 'required|numeric',
-            'prace_sell' => 'required|numeric',
-            'Quantite' => 'required|integer',
+            'prace_bay' => 'required|numeric|min:0',
+            'prace_sell' => 'required|numeric|min:0',
+            'Quantite' => 'required|integer|min:0',
         ], [
             'Referonce.unique' => '⚠️Référence déjà existante.',
             'Referonce.required' => '⚠️ خاصك تدخل référence.',

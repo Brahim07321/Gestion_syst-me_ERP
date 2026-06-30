@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 class ValidationTest extends TestCase
 {
@@ -789,6 +790,93 @@ public function test_category_creation_rejects_duplicate_category_name(): void
     $response->assertSessionHasErrors('Category');
 
     $this->assertDatabaseCount('categories', 1);
+}
+
+public function test_product_creation_rejects_negative_quantity(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Negative Quantity Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('product.store'), [
+            'Category_ID' => $categoryId,
+            'code' => 'NEG-QTY-001',
+            'Referonce' => 'NEG-QTY-REF-001',
+            'Designation' => 'Produit Negative Quantity Test',
+            'prace_bay' => 100,
+            'prace_sell' => 150,
+            'Quantite' => -5,
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('Quantite');
+
+    $this->assertDatabaseMissing('products', [
+        'Referonce' => 'NEG-QTY-REF-001',
+    ]);
+}
+
+public function test_product_creation_rejects_negative_buy_price(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Negative Buy Price Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('product.store'), [
+            'Category_ID' => $categoryId,
+            'code' => 'NEG-BUY-001',
+            'Referonce' => 'NEG-BUY-REF-001',
+            'Designation' => 'Produit Negative Buy Price Test',
+            'prace_bay' => -100,
+            'prace_sell' => 150,
+            'Quantite' => 10,
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('prace_bay');
+
+    $this->assertDatabaseMissing('products', [
+        'Referonce' => 'NEG-BUY-REF-001',
+    ]);
+}
+
+public function test_product_creation_rejects_negative_sell_price(): void
+{
+    $admin = $this->adminUser();
+
+    $categoryId = DB::table('categories')->insertGetId([
+        'Category' => 'Catégorie Negative Sell Price Test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('product.store'), [
+            'Category_ID' => $categoryId,
+            'code' => 'NEG-SELL-001',
+            'Referonce' => 'NEG-SELL-REF-001',
+            'Designation' => 'Produit Negative Sell Price Test',
+            'prace_bay' => 100,
+            'prace_sell' => -150,
+            'Quantite' => 10,
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('prace_sell');
+
+    $this->assertDatabaseMissing('products', [
+        'Referonce' => 'NEG-SELL-REF-001',
+    ]);
 }
 
 }
