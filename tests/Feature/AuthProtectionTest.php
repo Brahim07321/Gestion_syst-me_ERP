@@ -109,4 +109,24 @@ public function test_guest_cannot_access_purchases_excel_export(): void
 
     $response->assertRedirect(route('login'));
 }
+public function test_guest_cannot_access_purchases_pdf_export(): void
+{
+    $response = $this->get(route('purchases.export.pdf'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_customers_excel_export(): void
+{
+    $response = $this->get(route('customers.export.excel'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_customers_pdf_export(): void
+{
+    $response = $this->get(route('customers.export.pdf'));
+
+    $response->assertRedirect(route('login'));
+}
 }
