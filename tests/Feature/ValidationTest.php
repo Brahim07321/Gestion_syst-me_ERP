@@ -742,5 +742,53 @@ public function test_expense_creation_accepts_empty_description(): void
         'description' => null,
     ]);
 }
+public function test_category_creation_requires_category_name(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('category.store'), [
+            'Category' => '',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('Category');
+}
+
+public function test_category_creation_stores_valid_category(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('category.store'), [
+            'Category' => 'Catégorie Validation Test',
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('categories', [
+        'Category' => 'Catégorie Validation Test',
+    ]);
+}
+
+public function test_category_creation_rejects_duplicate_category_name(): void
+{
+    $admin = $this->adminUser();
+
+    $this->actingAs($admin)
+        ->post(route('category.store'), [
+            'Category' => 'Catégorie Duplicate Test',
+        ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('category.store'), [
+            'Category' => 'Catégorie Duplicate Test',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('Category');
+
+    $this->assertDatabaseCount('categories', 1);
+}
 
 }

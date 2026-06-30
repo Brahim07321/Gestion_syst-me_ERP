@@ -19,7 +19,7 @@ class CategoryController extends Controller
         }
         // Validate input
         $formFields = $request->validate([
-            'Category' => 'required|string|max:255', // Add constraints for better validation
+            'Category' => 'required|string|max:255|unique:categories,Category',
         ]);
     
         // Add category
