@@ -179,4 +179,196 @@ class StockMovementListingTest extends TestCase
         $response->assertSee('FAC-MOV-FILTER-001');
         $response->assertDontSee('PUR-MOV-FILTER-001');
     }
+
+    public function test_stock_movements_search_filter_by_reference(): void
+{
+    $admin = $this->adminUser();
+
+    $productId = $this->createProduct('REF-SEARCH-KEEP-001');
+    $otherProductId = $this->createProduct('REF-SEARCH-HIDE-001');
+
+    DB::table('factures')->insert([
+        [
+            'code_facture' => 'FAC-SEARCH-KEEP-001',
+            'client_name' => 'Client Search Keep',
+            'total' => 300,
+            'paid_amount' => 0,
+            'remaining_amount' => 300,
+            'status' => 'non payée',
+            'date_facture' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'code_facture' => 'FAC-SEARCH-HIDE-001',
+            'client_name' => 'Client Search Hide',
+            'total' => 200,
+            'paid_amount' => 0,
+            'remaining_amount' => 200,
+            'status' => 'non payée',
+            'date_facture' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+
+    DB::table('stock_movements')->insert([
+        [
+            'product_id' => $productId,
+            'type' => 'sortie',
+            'quantity' => 2,
+            'source' => 'facture',
+            'reference' => 'FAC-SEARCH-KEEP-001',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'product_id' => $otherProductId,
+            'type' => 'sortie',
+            'quantity' => 1,
+            'source' => 'facture',
+            'reference' => 'FAC-SEARCH-HIDE-001',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('stock.movements', ['search' => 'FAC-SEARCH-KEEP-001']));
+
+    $response->assertStatus(200);
+    $response->assertSee('FAC-SEARCH-KEEP-001');
+    $response->assertDontSee('FAC-SEARCH-HIDE-001');
+}
+
+public function test_stock_movements_type_filter_shows_only_sortie(): void
+{
+    $admin = $this->adminUser();
+
+    $productId = $this->createProduct('REF-TYPE-FILTER-001');
+
+    DB::table('factures')->insert([
+        'code_facture' => 'FAC-TYPE-FILTER-001',
+        'client_name' => 'Client Type Filter',
+        'total' => 300,
+        'paid_amount' => 0,
+        'remaining_amount' => 300,
+        'status' => 'non payée',
+        'date_facture' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $supplierId = DB::table('suppliers')->insertGetId([
+        'name' => 'Fournisseur Type Filter',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('purchases')->insert([
+        'purchase_code' => 'PUR-TYPE-FILTER-001',
+        'supplier_id' => $supplierId,
+        'purchase_date' => now()->toDateString(),
+        'total' => 500,
+        'status' => 'reçu',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('stock_movements')->insert([
+        [
+            'product_id' => $productId,
+            'type' => 'sortie',
+            'quantity' => 3,
+            'source' => 'facture',
+            'reference' => 'FAC-TYPE-FILTER-001',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'product_id' => $productId,
+            'type' => 'entree',
+            'quantity' => 5,
+            'source' => 'achat',
+            'reference' => 'PUR-TYPE-FILTER-001',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('stock.movements', ['type' => 'sortie']));
+
+    $response->assertStatus(200);
+    $response->assertSee('FAC-TYPE-FILTER-001');
+    $response->assertDontSee('PUR-TYPE-FILTER-001');
+}
+
+public function test_stock_movements_date_filter_shows_only_selected_period(): void
+{
+    $admin = $this->adminUser();
+
+    $productId = $this->createProduct('REF-DATE-FILTER-001');
+
+    DB::table('factures')->insert([
+        [
+            'code_facture' => 'FAC-DATE-IN-001',
+            'client_name' => 'Client Date In',
+            'total' => 300,
+            'paid_amount' => 0,
+            'remaining_amount' => 300,
+            'status' => 'non payée',
+            'date_facture' => '2026-06-15',
+            'due_date' => '2026-06-30',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'code_facture' => 'FAC-DATE-OUT-001',
+            'client_name' => 'Client Date Out',
+            'total' => 200,
+            'paid_amount' => 0,
+            'remaining_amount' => 200,
+            'status' => 'non payée',
+            'date_facture' => '2026-07-15',
+            'due_date' => '2026-07-30',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+
+    DB::table('stock_movements')->insert([
+        [
+            'product_id' => $productId,
+            'type' => 'sortie',
+            'quantity' => 2,
+            'source' => 'facture',
+            'reference' => 'FAC-DATE-IN-001',
+            'created_at' => '2026-06-15 10:00:00',
+            'updated_at' => '2026-06-15 10:00:00',
+        ],
+        [
+            'product_id' => $productId,
+            'type' => 'sortie',
+            'quantity' => 1,
+            'source' => 'facture',
+            'reference' => 'FAC-DATE-OUT-001',
+            'created_at' => '2026-07-15 10:00:00',
+            'updated_at' => '2026-07-15 10:00:00',
+        ],
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('stock.movements', [
+            'date_from' => '2026-06-01',
+            'date_to' => '2026-06-30',
+        ]));
+
+    $response->assertStatus(200);
+    $response->assertSee('FAC-DATE-IN-001');
+    $response->assertDontSee('FAC-DATE-OUT-001');
+}
 }
