@@ -149,22 +149,24 @@
                                         <td>
                                             <div class="d-flex justify-content-center gap-2">
                                                 <a href="{{ route('purchases.show', $purchase->id) }}?from_archive=1"
-                                                   class="btn btn-primary btn-sm rounded-pill px-3">
-                                                    <i class="fas fa-eye me-1"></i>Voir
-                                                </a>
-                                        
-                                                <button type="button"
-                                                class="btn btn-success btn-sm rounded-pill px-3"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#restoreDocumentModal"
-                                                onclick="setRestoreDocument(
-                                                    @js(route('documents.archives.purchase.restore', $purchase->id)),
-                                                    @js('Restaurer bon d’achat'),
-                                                    @js('Voulez-vous vraiment restaurer ce bon d’achat et ajouter le stock ?'),
-                                                    @js($purchase->purchase_code ?? '-')
-                                                )">
-                                            <i class="fas fa-rotate-left me-1"></i>Restaurer
-                                        </button>
+                                                    class="btn btn-primary btn-sm rounded-pill px-3">
+                                                     <i class="fas fa-eye me-1"></i>Voir
+                                                 </a>
+                                                 
+                                                 @if(auth()->check() && auth()->user()->role === 'admin')
+                                                     <button type="button"
+                                                         class="btn btn-success btn-sm rounded-pill px-3"
+                                                         data-bs-toggle="modal"
+                                                         data-bs-target="#restoreDocumentModal"
+                                                         onclick="setRestoreDocument(
+                                                             @js(route('documents.archives.purchase.restore', $purchase->id)),
+                                                             @js('Restaurer bon d’achat'),
+                                                             @js('Voulez-vous vraiment restaurer ce bon d’achat et ajouter le stock ?'),
+                                                             @js($purchase->purchase_code ?? '-')
+                                                         )">
+                                                         <i class="fas fa-rotate-left me-1"></i>Restaurer
+                                                     </button>
+                                                 @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -244,23 +246,31 @@
                                         </td>
                                         <td>
                                             <div class="d-flex justify-content-center gap-2">
+                                      
+
+
                                                 <a href="{{ route('factures.show', $facture->id) }}?from_archive=1"
-                                                   class="btn btn-primary btn-sm rounded-pill px-3">
-                                                    <i class="fas fa-eye me-1"></i>Voir
-                                                </a>
-                                        
-                                                <button type="button"
-                                                class="btn btn-success btn-sm rounded-pill px-3"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#restoreDocumentModal"
-                                                onclick="setRestoreDocument(
-                                                    @js(route('documents.archives.facture.restore', $facture->id)),
-                                                    @js('Restaurer facture'),
-                                                    @js('Voulez-vous vraiment restaurer cette facture ?'),
-                                                    @js($facture->code_facture ?? '-')
-                                                )">
-                                            <i class="fas fa-rotate-left me-1"></i>Restaurer
-                                        </button>
+                                                    class="btn btn-primary btn-sm rounded-pill px-3">
+                                                     <i class="fas fa-eye me-1"></i>Voir
+                                                 </a>
+                                                 
+                                                 @if(auth()->check() && auth()->user()->role === 'admin')
+                                                     <button type="button"
+                                                         class="btn btn-success btn-sm rounded-pill px-3"
+                                                         data-bs-toggle="modal"
+                                                         data-bs-target="#restoreDocumentModal"
+                                                         onclick="setRestoreDocument(
+                                                             @js(route('documents.archives.facture.restore', $facture->id)),
+                                                             @js('Restaurer facture'),
+                                                             @js('Voulez-vous vraiment restaurer cette facture ?'),
+                                                             @js($facture->code_facture ?? '-')
+                                                         )">
+                                                         <i class="fas fa-rotate-left me-1"></i>Restaurer
+                                                     </button>
+                                                 @endif
+
+
+
                                             </div>
                                         </td>
                                     </tr>
