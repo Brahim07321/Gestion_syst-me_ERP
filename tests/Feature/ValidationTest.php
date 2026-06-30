@@ -683,5 +683,64 @@ public function test_expense_creation_requires_expense_date(): void
         'amount' => 250,
     ]);
 }
+public function test_expense_creation_requires_numeric_amount(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('expenses.store'), [
+            'name' => 'Dépense Montant Non Numeric Test',
+            'amount' => 'abc',
+            'expense_date' => now()->toDateString(),
+            'description' => 'Description test',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('amount');
+
+    $this->assertDatabaseMissing('expenses', [
+        'name' => 'Dépense Montant Non Numeric Test',
+    ]);
+}
+
+public function test_expense_creation_rejects_negative_amount(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('expenses.store'), [
+            'name' => 'Dépense Montant Négatif Test',
+            'amount' => -10,
+            'expense_date' => now()->toDateString(),
+            'description' => 'Description test',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('amount');
+
+    $this->assertDatabaseMissing('expenses', [
+        'name' => 'Dépense Montant Négatif Test',
+    ]);
+}
+
+public function test_expense_creation_accepts_empty_description(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('expenses.store'), [
+            'name' => 'Dépense Sans Description Test',
+            'amount' => 150,
+            'expense_date' => now()->toDateString(),
+        ]);
+
+    $response->assertStatus(302);
+
+    $this->assertDatabaseHas('expenses', [
+        'name' => 'Dépense Sans Description Test',
+        'amount' => 150,
+        'description' => null,
+    ]);
+}
 
 }
