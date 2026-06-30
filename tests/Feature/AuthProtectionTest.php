@@ -149,4 +149,24 @@ public function test_guest_cannot_access_suppliers_export(): void
 
     $response->assertRedirect(route('login'));
 }
+public function test_guest_cannot_access_categories_page(): void
+{
+    $response = $this->get(route('category.index'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_suppliers_template(): void
+{
+    $response = $this->get(route('suppliers.template'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_products_template(): void
+{
+    $response = $this->get(route('products.template'));
+
+    $response->assertRedirect(route('login'));
+}
 }
