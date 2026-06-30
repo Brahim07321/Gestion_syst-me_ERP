@@ -129,4 +129,24 @@ public function test_guest_cannot_access_customers_pdf_export(): void
 
     $response->assertRedirect(route('login'));
 }
+public function test_guest_cannot_access_stock_movements_excel_export(): void
+{
+    $response = $this->get(route('stock.movements.export.excel'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_stock_movements_pdf_export(): void
+{
+    $response = $this->get(route('stock.movements.export.pdf'));
+
+    $response->assertRedirect(route('login'));
+}
+
+public function test_guest_cannot_access_suppliers_export(): void
+{
+    $response = $this->get(route('suppliers.export'));
+
+    $response->assertRedirect(route('login'));
+}
 }
