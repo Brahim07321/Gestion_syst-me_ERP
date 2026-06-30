@@ -118,6 +118,8 @@ class FactureController extends Controller
         $paid = (float) ($request->paid_amount ?? 0);
 
         if ($paid > $total) {
+            DB::rollBack();
+        
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Le montant payé ne peut pas dépasser le total de la facture.');

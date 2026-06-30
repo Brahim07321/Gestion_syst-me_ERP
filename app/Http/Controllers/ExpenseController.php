@@ -1,9 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\Expense;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ExpenseController extends Controller
 {
@@ -27,19 +27,21 @@ class ExpenseController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0.01',
+            'amount' => 'required|numeric|min:0',
             'expense_date' => 'required|date',
             'description' => 'nullable|string',
         ]);
-
-        Expense::create([
+    
+        DB::table('expenses')->insert([
             'name' => $request->name,
             'amount' => $request->amount,
             'expense_date' => $request->expense_date,
             'description' => $request->description,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-
-        return redirect()->back()->with('success', 'Dépense ajoutée avec succès.');
+    
+        return back()->with('success', 'Dépense ajoutée avec succès.');
     }
 
     public function destroy($id)

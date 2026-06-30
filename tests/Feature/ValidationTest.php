@@ -625,5 +625,63 @@ public function test_facture_creation_rejects_paid_amount_greater_than_total(): 
 
     $this->assertDatabaseCount('factures', 0);
 }
+public function test_expense_creation_requires_name(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('expenses.store'), [
+            'amount' => 250,
+            'expense_date' => now()->toDateString(),
+            'description' => 'Description test',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('name');
+
+    $this->assertDatabaseMissing('expenses', [
+        'amount' => 250,
+        'description' => 'Description test',
+    ]);
+}
+
+public function test_expense_creation_requires_amount(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('expenses.store'), [
+            'name' => 'Dépense Sans Montant Test',
+            'expense_date' => now()->toDateString(),
+            'description' => 'Description test',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('amount');
+
+    $this->assertDatabaseMissing('expenses', [
+        'name' => 'Dépense Sans Montant Test',
+    ]);
+}
+
+public function test_expense_creation_requires_expense_date(): void
+{
+    $admin = $this->adminUser();
+
+    $response = $this->actingAs($admin)
+        ->post(route('expenses.store'), [
+            'name' => 'Dépense Sans Date Test',
+            'amount' => 250,
+            'description' => 'Description test',
+        ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('expense_date');
+
+    $this->assertDatabaseMissing('expenses', [
+        'name' => 'Dépense Sans Date Test',
+        'amount' => 250,
+    ]);
+}
 
 }
