@@ -25,6 +25,9 @@ class ExpenseController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->user()->role !== 'admin') {
+            return back()->with('error', 'Accès refusé.');
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
