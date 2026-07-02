@@ -21,6 +21,7 @@ class SupplierWorkflowTest extends TestCase
     public function test_create_supplier_stores_supplier(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;        
 
         $response = $this->actingAs($admin)
             ->post(route('suppliers.store'), [
@@ -37,8 +38,10 @@ class SupplierWorkflowTest extends TestCase
     public function test_suppliers_page_shows_supplier(): void
     {
         $admin = $this->adminUser();
+$companyId = $admin->company_id;
 
         DB::table('suppliers')->insert([
+            'company_id' => $companyId,
             'name' => 'Fournisseur Page Test',
             'created_at' => now(),
             'updated_at' => now(),
@@ -54,8 +57,10 @@ class SupplierWorkflowTest extends TestCase
     public function test_delete_supplier_removes_supplier(): void
     {
         $admin = $this->adminUser();
+$companyId = $admin->company_id;
 
         $supplierId = DB::table('suppliers')->insertGetId([
+            'company_id' => $companyId,
             'name' => 'Fournisseur Delete Test',
             'created_at' => now(),
             'updated_at' => now(),

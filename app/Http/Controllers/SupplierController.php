@@ -13,15 +13,21 @@ class SupplierController extends Controller
    
 
     public function index(Request $request)
-{
-    $search = $request->search;
-
-    $suppliers = \App\Models\Supplier::when($search, function ($query) use ($search) {
-        $query->where('name', 'like', "%{$search}%");
-    })->latest()->paginate(10);
-
-    return view('suppliers.index', compact('suppliers', 'search'));
-}
+    {
+        $search = $request->search;
+        $companyId = auth()->user()->company_id;
+    
+        $suppliers = Supplier::where('company_id', $companyId)
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%');
+                });
+            })
+            ->latest()
+            ->paginate(10);
+    
+        return view('suppliers.index', compact('suppliers', 'search'));
+    }
 
     public function store(Request $request)
     {
@@ -33,6 +39,7 @@ class SupplierController extends Controller
         ]);
 
         Supplier::create([
+            'company_id' => auth()->user()->company_id,
             'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
@@ -47,7 +54,8 @@ class SupplierController extends Controller
         if (auth()->user()->role !== 'admin') {
             return back()->with('error', 'Accès refusé.');
         }
-        $supplier = Supplier::findOrFail($id);
+        $supplier = Supplier::where('company_id', auth()->user()->company_id)
+        ->findOrFail($id);
         $supplier->delete();
 
         return redirect()->back()->with('success', 'Fournisseur supprimé avec succès.');
