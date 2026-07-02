@@ -33,10 +33,6 @@ public function facture()
 {
     return $this->belongsTo(Facture::class, 'reference', 'code_facture')->withTrashed();
 }
-
-
-
-
 }
 
 

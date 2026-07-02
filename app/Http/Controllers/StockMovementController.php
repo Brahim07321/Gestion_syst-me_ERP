@@ -41,6 +41,8 @@ class StockMovementController extends Controller
 
     private function stockMovementQuery(Request $request)
     {
+        $companyId = auth()->user()->company_id;
+    
         $cancelledStatuses = [
             'annulé',
             'annule',
@@ -51,73 +53,66 @@ class StockMovementController extends Controller
             'supprimé',
             'supprime',
         ];
-
+    
         $query = StockMovement::with(['product', 'facture', 'purchase'])
-
-            // مهم: حيدنا annulation facture
+            ->where('company_id', $companyId)
             ->whereIn('source', [
                 'achat',
                 'facture',
                 'restauration achat',
-                'restauration facture'
+                'restauration facture',
             ])
-
-            // نخلي غير les mouvements اللي تابعين لفاتورة/شراء موجود وماشي annulé
-            ->where(function ($q) use ($cancelledStatuses) {
-
-                // Bon d'achat
-                $q->where(function ($sub) use ($cancelledStatuses) {
-                    $sub->where('source', 'achat')
-                        ->whereHas('purchase', function ($purchase) use ($cancelledStatuses) {
+            ->where(function ($q) use ($cancelledStatuses, $companyId) {
+                $q->where(function ($sub) use ($cancelledStatuses, $companyId) {
+                    $sub->whereIn('source', ['achat', 'restauration achat'])
+                        ->whereHas('purchase', function ($purchase) use ($cancelledStatuses, $companyId) {
+                            $purchase->where('company_id', $companyId);
+    
                             if (Schema::hasColumn('purchases', 'status')) {
                                 $purchase->whereNotIn('status', $cancelledStatuses);
                             }
                         });
                 })
-
-                // Facture
-                ->orWhere(function ($sub) use ($cancelledStatuses) {
-                    $sub->where('source', 'facture')
-                        ->whereHas('facture', function ($facture) use ($cancelledStatuses) {
+                ->orWhere(function ($sub) use ($cancelledStatuses, $companyId) {
+                    $sub->whereIn('source', ['facture', 'restauration facture'])
+                        ->whereHas('facture', function ($facture) use ($cancelledStatuses, $companyId) {
+                            $facture->where('company_id', $companyId);
+    
                             if (Schema::hasColumn('factures', 'status')) {
                                 $facture->whereNotIn('status', $cancelledStatuses);
                             }
                         });
                 });
             });
-
-        // 🔍 Search
+    
         if ($request->search) {
             $search = strtolower($request->search);
-
-            $query->where(function ($q) use ($search) {
+    
+            $query->where(function ($q) use ($search, $companyId) {
                 $q->whereRaw('LOWER(reference) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('product', function ($p) use ($search) {
-                        $p->whereRaw('LOWER(Designation) LIKE ?', ["%{$search}%"]);
+                    ->orWhereHas('product', function ($p) use ($search, $companyId) {
+                        $p->where('company_id', $companyId)
+                            ->whereRaw('LOWER(Designation) LIKE ?', ["%{$search}%"]);
                     });
             });
         }
-
-        // 📦 Type
+    
         if ($request->type) {
             $query->where('type', $request->type);
         }
-
-        // 🔗 Source
+    
         if ($request->source) {
             $query->where('source', $request->source);
         }
-
-        // 📅 Date from
+    
         if ($request->date_from) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
-
-        // 📅 Date to
+    
         if ($request->date_to) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
-
+    
         return $query;
     }
 }

@@ -18,15 +18,17 @@ class StockMovementListingTest extends TestCase
         return User::where('role', 'admin')->firstOrFail();
     }
 
-    private function createProduct(string $reference): int
+    private function createProduct(string $reference, int $companyId): int
     {
         $categoryId = DB::table('categories')->insertGetId([
-            'Category' => 'Catégorie Stock Movement Test',
+            'company_id' => $companyId,
+            'Category' => 'Catégorie ' . $reference,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
+    
         return DB::table('products')->insertGetId([
+            'company_id' => $companyId,
             'Category_ID' => $categoryId,
             'code' => 'P-' . $reference,
             'Referonce' => $reference,
@@ -38,15 +40,15 @@ class StockMovementListingTest extends TestCase
             'updated_at' => now(),
         ]);
     }
-
     public function test_stock_movements_page_shows_active_facture_movement(): void
     {
 $admin = $this->adminUser();
         $companyId = $admin->company_id;        
 
-        $productId = $this->createProduct('REF-MOV-FAC-001');
+        $productId = $this->createProduct('REF-MOV-FAC-001', $companyId);
 
         DB::table('factures')->insert([
+            'company_id' => $companyId,
             'code_facture' => 'FAC-MOV-001',
             'client_name' => 'Client Movement Test',
             'total' => 450,
@@ -60,6 +62,8 @@ $admin = $this->adminUser();
         ]);
 
         DB::table('stock_movements')->insert([
+            'company_id' => $companyId,
+
             'product_id' => $productId,
             'type' => 'sortie',
             'quantity' => 3,
@@ -81,7 +85,7 @@ $admin = $this->adminUser();
     {
         $admin = $this->adminUser();
         $companyId = $admin->company_id;
-        $productId = $this->createProduct('REF-MOV-PUR-001');
+        $productId = $this->createProduct('REF-MOV-PUR-001', $companyId);
 
         $supplierId = DB::table('suppliers')->insertGetId([
             'company_id' => $companyId,
@@ -91,6 +95,8 @@ $admin = $this->adminUser();
         ]);
 
         DB::table('purchases')->insert([
+            'company_id' => $companyId,
+
             'purchase_code' => 'PUR-MOV-001',
             'supplier_id' => $supplierId,
             'purchase_date' => now()->toDateString(),
@@ -101,6 +107,8 @@ $admin = $this->adminUser();
         ]);
 
         DB::table('stock_movements')->insert([
+            'company_id' => $companyId,
+
             'product_id' => $productId,
             'type' => 'entree',
             'quantity' => 5,
@@ -122,9 +130,10 @@ $admin = $this->adminUser();
     {
 $admin = $this->adminUser();
         $companyId = $admin->company_id;
-        $productId = $this->createProduct('REF-MOV-FILTER-001');
+        $productId = $this->createProduct('REF-MOV-FILTER-001', $companyId);
 
         DB::table('factures')->insert([
+            'company_id' => $companyId,
             'code_facture' => 'FAC-MOV-FILTER-001',
             'client_name' => 'Client Movement Filter Test',
             'total' => 300,
@@ -138,12 +147,16 @@ $admin = $this->adminUser();
         ]);
 
         $supplierId = DB::table('suppliers')->insertGetId([
+            'company_id' => $companyId,
+
             'name' => 'Fournisseur Movement Filter Test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('purchases')->insert([
+            'company_id' => $companyId,
+
             'purchase_code' => 'PUR-MOV-FILTER-001',
             'supplier_id' => $supplierId,
             'purchase_date' => now()->toDateString(),
@@ -155,6 +168,8 @@ $admin = $this->adminUser();
 
         DB::table('stock_movements')->insert([
             [
+                'company_id' => $companyId,
+
                 'product_id' => $productId,
                 'type' => 'sortie',
                 'quantity' => 2,
@@ -164,6 +179,8 @@ $admin = $this->adminUser();
                 'updated_at' => now(),
             ],
             [
+                'company_id' => $companyId,
+
                 'product_id' => $productId,
                 'type' => 'entree',
                 'quantity' => 4,
@@ -185,12 +202,15 @@ $admin = $this->adminUser();
     public function test_stock_movements_search_filter_by_reference(): void
 {
     $admin = $this->adminUser();
+    $companyId = $admin->company_id;
 
-    $productId = $this->createProduct('REF-SEARCH-KEEP-001');
-    $otherProductId = $this->createProduct('REF-SEARCH-HIDE-001');
+    $productId = $this->createProduct('REF-SEARCH-KEEP-001', $companyId);
+    $otherProductId = $this->createProduct('REF-SEARCH-HIDE-001', $companyId);
 
     DB::table('factures')->insert([
         [
+            'company_id' => $companyId,
+
             'code_facture' => 'FAC-SEARCH-KEEP-001',
             'client_name' => 'Client Search Keep',
             'total' => 300,
@@ -203,6 +223,7 @@ $admin = $this->adminUser();
             'updated_at' => now(),
         ],
         [
+            'company_id' => $companyId,
             'code_facture' => 'FAC-SEARCH-HIDE-001',
             'client_name' => 'Client Search Hide',
             'total' => 200,
@@ -218,6 +239,8 @@ $admin = $this->adminUser();
 
     DB::table('stock_movements')->insert([
         [
+            'company_id' => $companyId,
+
             'product_id' => $productId,
             'type' => 'sortie',
             'quantity' => 2,
@@ -227,6 +250,8 @@ $admin = $this->adminUser();
             'updated_at' => now(),
         ],
         [
+            'company_id' => $companyId,
+
             'product_id' => $otherProductId,
             'type' => 'sortie',
             'quantity' => 1,
@@ -248,10 +273,13 @@ $admin = $this->adminUser();
 public function test_stock_movements_type_filter_shows_only_sortie(): void
 {
     $admin = $this->adminUser();
+    $companyId = $admin->company_id;
 
-    $productId = $this->createProduct('REF-TYPE-FILTER-001');
+    $productId = $this->createProduct('REF-TYPE-FILTER-001', $companyId);
 
     DB::table('factures')->insert([
+        'company_id' => $companyId,
+
         'code_facture' => 'FAC-TYPE-FILTER-001',
         'client_name' => 'Client Type Filter',
         'total' => 300,
@@ -265,12 +293,16 @@ public function test_stock_movements_type_filter_shows_only_sortie(): void
     ]);
 
     $supplierId = DB::table('suppliers')->insertGetId([
+        'company_id' => $companyId,
+
         'name' => 'Fournisseur Type Filter',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     DB::table('purchases')->insert([
+        'company_id' => $companyId,
+
         'purchase_code' => 'PUR-TYPE-FILTER-001',
         'supplier_id' => $supplierId,
         'purchase_date' => now()->toDateString(),
@@ -282,6 +314,8 @@ public function test_stock_movements_type_filter_shows_only_sortie(): void
 
     DB::table('stock_movements')->insert([
         [
+            'company_id' => $companyId,
+
             'product_id' => $productId,
             'type' => 'sortie',
             'quantity' => 3,
@@ -291,6 +325,8 @@ public function test_stock_movements_type_filter_shows_only_sortie(): void
             'updated_at' => now(),
         ],
         [
+            'company_id' => $companyId,
+
             'product_id' => $productId,
             'type' => 'entree',
             'quantity' => 5,
@@ -312,11 +348,14 @@ public function test_stock_movements_type_filter_shows_only_sortie(): void
 public function test_stock_movements_date_filter_shows_only_selected_period(): void
 {
     $admin = $this->adminUser();
+    $companyId = $admin->company_id;
 
-    $productId = $this->createProduct('REF-DATE-FILTER-001');
+    $productId = $this->createProduct('REF-DATE-FILTER-001', $companyId);
 
     DB::table('factures')->insert([
         [
+            'company_id' => $companyId,
+
             'code_facture' => 'FAC-DATE-IN-001',
             'client_name' => 'Client Date In',
             'total' => 300,
@@ -329,6 +368,7 @@ public function test_stock_movements_date_filter_shows_only_selected_period(): v
             'updated_at' => now(),
         ],
         [
+            'company_id' => $companyId,
             'code_facture' => 'FAC-DATE-OUT-001',
             'client_name' => 'Client Date Out',
             'total' => 200,
@@ -344,6 +384,8 @@ public function test_stock_movements_date_filter_shows_only_selected_period(): v
 
     DB::table('stock_movements')->insert([
         [
+            'company_id' => $companyId,
+
             'product_id' => $productId,
             'type' => 'sortie',
             'quantity' => 2,
@@ -353,6 +395,8 @@ public function test_stock_movements_date_filter_shows_only_selected_period(): v
             'updated_at' => '2026-06-15 10:00:00',
         ],
         [
+            'company_id' => $companyId,
+
             'product_id' => $productId,
             'type' => 'sortie',
             'quantity' => 1,
