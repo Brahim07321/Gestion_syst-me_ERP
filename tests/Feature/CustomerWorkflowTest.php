@@ -32,6 +32,7 @@ class CustomerWorkflowTest extends TestCase
         $response->assertStatus(302);
 
         $this->assertDatabaseHas('customers', [
+            'company_id' => $admin->company_id,
             'name' => 'Client Create Test',
             'address' => 'Adresse Client Create Test',
             'contact' => '0611111111',
@@ -41,8 +42,10 @@ class CustomerWorkflowTest extends TestCase
     public function test_update_customer_changes_customer_data(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
         $customerId = DB::table('customers')->insertGetId([
+            'company_id' => $companyId,
             'name' => 'Client Avant Update',
             'address' => 'Ancienne Adresse',
             'contact' => '0611111111',
@@ -70,8 +73,10 @@ class CustomerWorkflowTest extends TestCase
     public function test_delete_customer_removes_customer(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
         $customerId = DB::table('customers')->insertGetId([
+            'company_id' => $companyId,
             'name' => 'Client Delete Test',
             'address' => 'Adresse Delete Test',
             'contact' => '0633333333',

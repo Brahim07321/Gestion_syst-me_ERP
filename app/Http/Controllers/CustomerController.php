@@ -21,12 +21,13 @@ class CustomerController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'address' => 'nullable',  // ← machi required
-            'contact' => 'nullable',  // ← machi required
+            'address' => 'nullable',
+            'contact' => 'nullable',
         ]);
     
         try {
             Customer::create([
+                'company_id' => auth()->user()->company_id,
                 'name' => $request->name,
                 'address' => $request->address ?? '',
                 'contact' => $request->contact ?? '',
@@ -37,7 +38,6 @@ class CustomerController extends Controller
             }
     
             return redirect('/Customer')->with('message', 'Client ajouté avec succès!');
-    
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erreur: ' . $e->getMessage());
         }
@@ -46,18 +46,22 @@ class CustomerController extends Controller
     public function ShowCustomers(Request $request)
     {
         $search = $request->search;
-
-        $customers = Customer::when($search, function ($query) use ($search) {
-                $query->where('name', 'like', '%' . $search . '%')
+        $companyId = auth()->user()->company_id;
+    
+        $customers = Customer::where('company_id', $companyId)
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
                       ->orWhere('address', 'like', '%' . $search . '%')
                       ->orWhere('contact', 'like', '%' . $search . '%');
+                });
             })
             ->latest()
             ->paginate(10)
             ->appends([
                 'search' => $search
             ]);
-
+    
         return view('customer', compact('customers'));
     }
 
@@ -69,34 +73,37 @@ class CustomerController extends Controller
 
     public function edit($id)
     {
-        $customer = Customer::find($id);
-        $customers = Customer::paginate(10);
-
+        $companyId = auth()->user()->company_id;
+    
+        $customer = Customer::where('company_id', $companyId)->find($id);
+        $customers = Customer::where('company_id', $companyId)->paginate(10);
+    
         if (!$customer) {
-            return redirect()->route('customers.update')->with('error', 'العميل غير موجود.');
+            return redirect('/Customer')->with('error', 'العميل غير موجود.');
         }
-
+    
         return view('Customers.edit', compact('customer', 'customers'));
     }
 
     public function update(Request $request, $id)
     {
-        $customer = Customer::find($id);
-
+        $customer = Customer::where('company_id', auth()->user()->company_id)->find($id);
+    
         if (!$customer) {
-            return redirect()->route('customers.edit', $id)->with('error', 'العميل غير موجود.');
+            return redirect('/Customer')->with('error', 'العميل غير موجود.');
         }
-
+    
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'contact' => 'required|digits:10',
+            'address' => 'nullable|string|max:255',
+            'contact' => 'nullable|string|max:20',
         ]);
-
+    
         $customer->update($validatedData);
-
+    
         return redirect('/Customer')->with('message', 'Customer updated successfully.');
     }
+
 
     public function saveCustomers(Request $request)
     {
@@ -117,13 +124,13 @@ class CustomerController extends Controller
         }
     }
 //for dellet
-    public function destroy($id)
+   public function destroy($id)
 {
     if (auth()->user()->role !== 'admin') {
         return back()->with('error', 'Accès refusé.');
     }
-    
-    $customer = Customer::findOrFail($id);
+
+    $customer = Customer::where('company_id', auth()->user()->company_id)->findOrFail($id);
     $customer->delete();
 
     return redirect('/Customer')->with('message', 'Client supprimé avec succès.');
@@ -138,7 +145,9 @@ public function exportExcel()
 
 public function exportPdf()
 {
-    $customers = Customer::select('id', 'name', 'address', 'contact')->get();
+    $customers = Customer::where('company_id', auth()->user()->company_id)
+        ->select('id', 'name', 'address', 'contact')
+        ->get();
 
     $pdf = Pdf::loadView('customers.pdf', compact('customers'))
         ->setPaper('A4', 'portrait');
