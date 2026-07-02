@@ -2,9 +2,9 @@ name: Laravel ERP Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, saas-local ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, saas-local ]
 
 jobs:
   tests:
