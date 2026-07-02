@@ -466,18 +466,43 @@ public function cancel($id)
     }
 }
 
+
 public function destroy($id)
 {
     if (auth()->user()->role !== 'admin') {
         return back()->with('error', 'Accès refusé.');
     }
 
-    $facture = Facture::findOrFail($id);
-    $facture->delete();
+    DB::beginTransaction();
 
-    return back()->with('success', 'Facture supprimée avec succès.');
+    try {
+        $facture = Facture::with('items')->findOrFail($id);
+
+        // إذا facture ما كانتش annulée، خاص stock يرجع قبل الحذف
+        if ($facture->status !== 'annulée') {
+            foreach ($facture->items as $item) {
+                $product = Product::where('Referonce', $item->referonce)->first();
+
+                if ($product) {
+                    $product->increment('Quantite', $item->quantity);
+                }
+            }
+
+            $facture->status = 'annulée';
+            $facture->save();
+        }
+
+        $facture->delete();
+
+        DB::commit();
+
+        return back()->with('success', 'Facture supprimée avec succès.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        return back()->with('error', 'Erreur: ' . $e->getMessage());
+    }
 }
-
 
 public function edit($id)
 {
