@@ -21,14 +21,17 @@ class ListingPagesTest extends TestCase
     public function test_products_page_shows_product(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
         $categoryId = DB::table('categories')->insertGetId([
+            'company_id' => $companyId,
             'Category' => 'Catégorie Listing Product Test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('products')->insert([
+            'company_id' => $companyId,
             'Category_ID' => $categoryId,
             'code' => 'P-LIST-001',
             'Referonce' => 'REF-LIST-PROD-001',
@@ -51,33 +54,38 @@ class ListingPagesTest extends TestCase
     public function test_customers_page_shows_customer(): void
     {
         $admin = $this->adminUser();
-
+        $companyId = $admin->company_id;
+    
         DB::table('customers')->insert([
+            'company_id' => $companyId,
             'name' => 'Client Listing Test',
             'address' => 'Adresse Listing Test',
-            'contact' => '0611111111',
+            'contact' => '0600000000',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
+    
         $response = $this->actingAs($admin)
             ->get(route('customers.index'));
-
+    
         $response->assertStatus(200);
         $response->assertSee('Client Listing Test');
     }
-
+    
     public function test_stock_page_shows_product(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
         $categoryId = DB::table('categories')->insertGetId([
+            'company_id' => $companyId,
             'Category' => 'Catégorie Stock Listing Test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('products')->insert([
+            'company_id' => $companyId,
             'Category_ID' => $categoryId,
             'code' => 'P-STOCK-LIST-001',
             'Referonce' => 'REF-STOCK-LIST-001',
