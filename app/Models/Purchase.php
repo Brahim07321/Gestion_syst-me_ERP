@@ -10,6 +10,7 @@ class Purchase extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'company_id',
         'purchase_code',
         'supplier_id',
         'purchase_date',

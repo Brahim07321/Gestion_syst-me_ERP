@@ -12,6 +12,7 @@ class Facture extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'company_id',
         'code_facture',
         'client_name',
         'total',
