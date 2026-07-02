@@ -41,7 +41,8 @@ class StockMovementListingTest extends TestCase
 
     public function test_stock_movements_page_shows_active_facture_movement(): void
     {
-        $admin = $this->adminUser();
+$admin = $this->adminUser();
+        $companyId = $admin->company_id;        
 
         $productId = $this->createProduct('REF-MOV-FAC-001');
 
@@ -79,10 +80,11 @@ class StockMovementListingTest extends TestCase
     public function test_stock_movements_page_shows_received_purchase_movement(): void
     {
         $admin = $this->adminUser();
-
+        $companyId = $admin->company_id;
         $productId = $this->createProduct('REF-MOV-PUR-001');
 
         $supplierId = DB::table('suppliers')->insertGetId([
+            'company_id' => $companyId,
             'name' => 'Fournisseur Movement Test',
             'created_at' => now(),
             'updated_at' => now(),
@@ -118,8 +120,8 @@ class StockMovementListingTest extends TestCase
 
     public function test_stock_movements_source_filter_shows_only_matching_source(): void
     {
-        $admin = $this->adminUser();
-
+$admin = $this->adminUser();
+        $companyId = $admin->company_id;
         $productId = $this->createProduct('REF-MOV-FILTER-001');
 
         DB::table('factures')->insert([
