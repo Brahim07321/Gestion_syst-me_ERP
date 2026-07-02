@@ -21,20 +21,24 @@ class PurchaseWorkflowTest extends TestCase
     public function test_create_purchase_en_attente_does_not_add_stock(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
         $categoryId = DB::table('categories')->insertGetId([
+            'company_id' => $companyId,
             'Category' => 'Catégorie Test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $supplierId = DB::table('suppliers')->insertGetId([
+            'company_id' => $companyId,
             'name' => 'Fournisseur Test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $productId = DB::table('products')->insertGetId([
+            'company_id' => $companyId,
             'Category_ID' => $categoryId,
             'code' => 'P-ATT-001',
             'Referonce' => 'REF-ATT-001',
@@ -69,6 +73,7 @@ class PurchaseWorkflowTest extends TestCase
 
         $this->assertDatabaseHas('purchases', [
             'supplier_id' => $supplierId,
+            'company_id' => $companyId,
             'status' => 'en attente',
             'total' => 500,
         ]);
@@ -86,20 +91,24 @@ class PurchaseWorkflowTest extends TestCase
     public function test_mark_purchase_as_received_adds_stock(): void
 {
     $admin = $this->adminUser();
+    $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $supplierId = DB::table('suppliers')->insertGetId([
+        'company_id' => $companyId,
         'name' => 'Fournisseur Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $productId = DB::table('products')->insertGetId([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-REC-001',
         'Referonce' => 'REF-REC-001',
@@ -112,6 +121,7 @@ class PurchaseWorkflowTest extends TestCase
     ]);
 
     $purchaseId = DB::table('purchases')->insertGetId([
+        'company_id' => $companyId,
         'purchase_code' => 'ACH-REC-001',
         'supplier_id' => $supplierId,
         'purchase_date' => now()->toDateString(),
@@ -144,20 +154,24 @@ class PurchaseWorkflowTest extends TestCase
 
     $this->assertDatabaseHas('purchases', [
         'id' => $purchaseId,
+        'company_id' => $companyId,
         'status' => 'reçu',
     ]);
 }
 public function test_deleted_purchase_appears_in_documents_archives(): void
 {
     $admin = $this->adminUser();
+    $companyId = $admin->company_id;
 
     $supplierId = DB::table('suppliers')->insertGetId([
+        'company_id' => $companyId,
         'name' => 'Fournisseur Archive Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $purchaseId = DB::table('purchases')->insertGetId([
+        'company_id' => $companyId,
         'purchase_code' => 'ACH-ARCHIVE-001',
         'supplier_id' => $supplierId,
         'purchase_date' => now()->toDateString(),
@@ -188,20 +202,24 @@ public function test_deleted_purchase_appears_in_documents_archives(): void
 public function test_cancel_purchase_en_attente_marks_as_cancelled_without_changing_stock(): void
 {
     $admin = $this->adminUser();
+    $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $supplierId = DB::table('suppliers')->insertGetId([
+        'company_id' => $companyId,
         'name' => 'Fournisseur Cancel Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $productId = DB::table('products')->insertGetId([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-CANCEL-001',
         'Referonce' => 'REF-CANCEL-001',
@@ -214,6 +232,7 @@ public function test_cancel_purchase_en_attente_marks_as_cancelled_without_chang
     ]);
 
     $purchaseId = DB::table('purchases')->insertGetId([
+        'company_id' => $companyId,
         'purchase_code' => 'ACH-CANCEL-001',
         'supplier_id' => $supplierId,
         'purchase_date' => now()->toDateString(),
@@ -241,6 +260,7 @@ public function test_cancel_purchase_en_attente_marks_as_cancelled_without_chang
     // Status خاصو يولي annulé
     $this->assertDatabaseHas('purchases', [
         'id' => $purchaseId,
+        'company_id' => $companyId,
         'status' => 'annulé',
     ]);
 

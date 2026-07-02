@@ -18,15 +18,17 @@ class ArchiveStockLogicTest extends TestCase
         return User::where('role', 'admin')->firstOrFail();
     }
 
-    private function createProductWithQuantity(int $quantity): int
+    private function createProductWithQuantity(int $quantity, int $companyId): int
     {
         $categoryId = DB::table('categories')->insertGetId([
+            'company_id' => $companyId,
             'Category' => 'Catégorie Archive Stock Test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         return DB::table('products')->insertGetId([
+            'company_id' => $companyId,
             'Category_ID' => $categoryId,
             'code' => 'ARCH-STOCK-001',
             'Referonce' => 'ARCH-STOCK-REF-001',
@@ -42,11 +44,13 @@ class ArchiveStockLogicTest extends TestCase
     public function test_delete_facture_restores_stock_and_restore_facture_decreases_stock_again(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
         // Stock initial après création facture déjà نقصناه: 10 - 3 = 7
-        $productId = $this->createProductWithQuantity(7);
+        $productId = $this->createProductWithQuantity(7, $companyId);
 
         $factureId = DB::table('factures')->insertGetId([
+            'company_id' => $companyId,
             'code_facture' => 'FAC-ARCH-STOCK-001',
             'client_name' => 'Client Archive Stock Test',
             'total' => 450,
@@ -78,6 +82,7 @@ class ArchiveStockLogicTest extends TestCase
 
         $this->assertDatabaseHas('products', [
             'id' => $productId,
+            'company_id' => $companyId,
             'Quantite' => 10,
         ]);
 
@@ -89,6 +94,7 @@ class ArchiveStockLogicTest extends TestCase
 
         $this->assertDatabaseHas('products', [
             'id' => $productId,
+            'company_id' => $companyId,
             'Quantite' => 7,
         ]);
     }
@@ -96,17 +102,20 @@ class ArchiveStockLogicTest extends TestCase
     public function test_delete_received_purchase_decreases_stock_and_restore_purchase_adds_stock_again(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
         // Stock initial فيه achat déjà تزاد: 10 + 5 = 15
-        $productId = $this->createProductWithQuantity(15);
+        $productId = $this->createProductWithQuantity(15, $companyId);
 
         $supplierId = DB::table('suppliers')->insertGetId([
+            'company_id' => $companyId,
             'name' => 'Fournisseur Archive Stock Test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $purchaseId = DB::table('purchases')->insertGetId([
+            'company_id' => $companyId,
             'purchase_code' => 'PUR-ARCH-STOCK-001',
             'supplier_id' => $supplierId,
             'purchase_date' => now()->toDateString(),
@@ -134,6 +143,7 @@ class ArchiveStockLogicTest extends TestCase
 
         $this->assertDatabaseHas('products', [
             'id' => $productId,
+            'company_id' => $companyId,
             'Quantite' => 10,
         ]);
 
@@ -145,6 +155,7 @@ class ArchiveStockLogicTest extends TestCase
 
         $this->assertDatabaseHas('products', [
             'id' => $productId,
+            'company_id' => $companyId,
             'Quantite' => 15,
         ]);
     }
