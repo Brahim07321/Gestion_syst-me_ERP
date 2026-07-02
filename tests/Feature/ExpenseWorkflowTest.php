@@ -33,6 +33,7 @@ class ExpenseWorkflowTest extends TestCase
         $response->assertStatus(302);
 
         $this->assertDatabaseHas('expenses', [
+            'company_id' => $admin->company_id,
             'name' => 'Dépense Create Test',
             'amount' => 250,
             'description' => 'Description dépense create test',
@@ -42,43 +43,47 @@ class ExpenseWorkflowTest extends TestCase
     public function test_expenses_page_shows_expense(): void
     {
         $admin = $this->adminUser();
-
+        $companyId = $admin->company_id;
+    
         DB::table('expenses')->insert([
+            'company_id' => $companyId,
             'name' => 'Dépense Page Test',
-            'amount' => 300,
+            'amount' => 100,
             'expense_date' => now()->toDateString(),
-            'description' => 'Description dépense page test',
+            'description' => 'Description dépense test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
+    
         $response = $this->actingAs($admin)
             ->get(route('expenses.index'));
-
+    
         $response->assertStatus(200);
         $response->assertSee('Dépense Page Test');
     }
 
-    public function test_delete_expense_removes_expense(): void
-    {
-        $admin = $this->adminUser();
+public function test_delete_expense_removes_expense(): void
+{
+    $admin = $this->adminUser();
+    $companyId = $admin->company_id;
 
-        $expenseId = DB::table('expenses')->insertGetId([
-            'name' => 'Dépense Delete Test',
-            'amount' => 400,
-            'expense_date' => now()->toDateString(),
-            'description' => 'Description dépense delete test',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+    $expenseId = DB::table('expenses')->insertGetId([
+        'company_id' => $companyId,
+        'name' => 'Dépense Delete Test',
+        'amount' => 200,
+        'expense_date' => now()->toDateString(),
+        'description' => 'Description delete test',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
-        $response = $this->actingAs($admin)
-            ->delete(route('expenses.destroy', $expenseId));
+    $response = $this->actingAs($admin)
+        ->delete(route('expenses.destroy', $expenseId));
 
-        $response->assertStatus(302);
+    $response->assertStatus(302);
 
-        $this->assertDatabaseMissing('expenses', [
-            'id' => $expenseId,
-        ]);
-    }
+    $this->assertDatabaseMissing('expenses', [
+        'id' => $expenseId,
+    ]);
+}
 }
