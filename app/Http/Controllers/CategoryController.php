@@ -17,27 +17,34 @@ class CategoryController extends Controller
         if (auth()->user()->role !== 'admin') {
             return back()->with('error', 'Accès refusé.');
         }
-        // Validate input
+    
         $formFields = $request->validate([
             'Category' => 'required|string|max:255|unique:categories,Category',
         ]);
     
-        // Add category
+        $formFields['company_id'] = auth()->user()->company_id;
+    
         try {
             Category::create($formFields);
+    
             return redirect('/Category')->with('message', 'Category created successfully!');
         } catch (\Exception $e) {
             return redirect('/Category')->with('error', 'Error: ' . $e->getMessage());
         }
     }
-    
+ 
+
     public function ShowCategory(Request $request)
     {
-        $search = strtolower($request->search ?? '');
+        $search = $request->search;
+        $companyId = auth()->user()->company_id;
     
-        $Categorys = Category::when($search, function ($query) use ($search) {
-            $query->whereRaw('LOWER(category) LIKE ?', ["%{$search}%"]);
-        })->latest()->paginate(10);
+        $Categorys = Category::where('company_id', $companyId)
+            ->when($search, function ($query) use ($search) {
+                $query->where('Category', 'like', '%' . $search . '%');
+            })
+            ->latest()
+            ->paginate(10);
     
         return view('Category', compact('Categorys', 'search'));
     }

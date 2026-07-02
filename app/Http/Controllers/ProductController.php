@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
-use App\Models\customer;
 use App\Imports\ProductsImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TemplateExport;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\CompanySetting;
+use Illuminate\Validation\Rule;
+use App\Models\Customer;
 
 use App\Models\PurchaseItem;
 
@@ -28,20 +29,30 @@ class ProductController extends Controller
 
     public function FormCategory()
     {
-        // Fetch all category
-        $Categorys = category::all();
-
-        // Pass the data to the view
+        $Categorys = Category::where('company_id', auth()->user()->company_id)->get();
+    
         return view('product', ['Categorys' => $Categorys]);
     }
 
 
     public function createproduct(Request $request)
     {
+        $companyId = auth()->user()->company_id;
+    
         $formFields = $request->validate([
-            'Category_ID' => 'required',
+            'Category_ID' => [
+                'required',
+                Rule::exists('categories', 'id')->where(function ($query) use ($companyId) {
+                    return $query->where('company_id', $companyId);
+                }),
+            ],
             'code' => 'required',
-            'Referonce' => 'required|unique:products,Referonce',
+            'Referonce' => [
+                'required',
+                Rule::unique('products', 'Referonce')->where(function ($query) use ($companyId) {
+                    return $query->where('company_id', $companyId);
+                }),
+            ],
             'Designation' => 'required',
             'prace_bay' => 'required|numeric|min:0',
             'prace_sell' => 'required|numeric|min:0',
@@ -51,67 +62,95 @@ class ProductController extends Controller
             'Referonce.required' => '⚠️ خاصك تدخل référence.',
         ]);
     
+        $formFields['company_id'] = $companyId;
+    
         Product::create($formFields);
     
         return redirect()->back()->with('success', 'Product created successfully');
     }
-
     
    
 
     public function index(Request $request)
-{
-    $search = $request->search;
-    $categories = Category::all(); // جلب كل الفئات
-    $products = Product::when($search, function ($query, $search) {
-        $query->where('Designation', 'like', '%' . $search . '%')
-              ->orWhere('Referonce', 'like', '%' . $search . '%')
-              ->orWhere('code', 'like', '%' . $search . '%');
-    })->paginate(25);
-
-    return view('product', compact('products', 'search', 'categories'));
-}
+    {
+        $search = $request->search;
+        $companyId = auth()->user()->company_id;
+    
+        $categories = Category::where('company_id', $companyId)->get();
+    
+        $products = Product::where('company_id', $companyId)
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('Designation', 'like', '%' . $search . '%')
+                      ->orWhere('Referonce', 'like', '%' . $search . '%')
+                      ->orWhere('code', 'like', '%' . $search . '%');
+                });
+            })
+            ->latest()
+            ->paginate(25);
+    
+        return view('product', compact('products', 'search', 'categories'));
+    }
 
     public function getProductByReference(Request $request)
     {
-        $searchQuery = $request->input('query');  // Get the search query from the request
-
-        // Query the products table for products matching the reference or designation
-        $products = Product::where('Referonce', 'like', "%{$searchQuery}%")
-            ->orWhere('Designation', 'like', "%{$searchQuery}%")
+        $searchQuery = $request->input('query');
+        $companyId = auth()->user()->company_id;
+    
+        $products = Product::where('company_id', $companyId)
+            ->where(function ($query) use ($searchQuery) {
+                $query->where('Referonce', 'like', "%{$searchQuery}%")
+                      ->orWhere('Designation', 'like', "%{$searchQuery}%");
+            })
             ->limit(10)
             ->get();
-
-        // Return the products as JSON to be used by JavaScript
+    
         return response()->json($products);
     }
 
-    public function showInvoice()
-    {
-        // Fetch products and customers
-        $products = Product::all();
-        $customers = Customer::all(['id', 'name', 'address']); // Récupérer les clients avec leurs IDs et noms
-        $company = CompanySetting::first();
 
-        return view('facture', compact('products', 'customers', 'company'));
-    }
-
-
-
-
-
-    public function update(Request $request, $id)
+public function showInvoice()
 {
-    $product = Product::findOrFail($id);
+    $companyId = auth()->user()->company_id;
+
+    $products = Product::where('company_id', $companyId)->get();
+    $customers = Customer::where('company_id', $companyId)
+        ->get(['id', 'name', 'address']);
+
+    $company = CompanySetting::first();
+
+    return view('facture', compact('products', 'customers', 'company'));
+}
+
+
+
+
+public function update(Request $request, $id)
+{
+    $companyId = auth()->user()->company_id;
+
+    $product = Product::where('company_id', $companyId)->findOrFail($id);
 
     $formFields = $request->validate([
-        'Category_ID' => 'required',
+        'Category_ID' => [
+            'required',
+            Rule::exists('categories', 'id')->where(function ($query) use ($companyId) {
+                return $query->where('company_id', $companyId);
+            }),
+        ],
         'code' => 'required',
-        'Referonce' => 'required|unique:products,Referonce,' . $id,
+        'Referonce' => [
+            'required',
+            Rule::unique('products', 'Referonce')
+                ->ignore($id)
+                ->where(function ($query) use ($companyId) {
+                    return $query->where('company_id', $companyId);
+                }),
+        ],
         'Designation' => 'required',
-        'prace_bay' => 'required|numeric',
-        'prace_sell' => 'required|numeric',
-        'Quantite' => 'required|integer',
+        'prace_bay' => 'required|numeric|min:0',
+        'prace_sell' => 'required|numeric|min:0',
+        'Quantite' => 'required|integer|min:0',
     ], [
         'Referonce.unique' => 'La référence que vous avez saisie est déjà utilisée. Merci de choisir une référence unique.',
     ]);
@@ -121,14 +160,13 @@ class ProductController extends Controller
     return redirect()->back()->with('success', 'Produit modifié avec succès.');
 }
 
-
-    public function destroy($id)
-
+public function destroy($id)
 {
     if (auth()->user()->role !== 'admin') {
         return back()->with('error', 'Accès refusé.');
     }
-    $product = Product::findOrFail($id);
+
+    $product = Product::where('company_id', auth()->user()->company_id)->findOrFail($id);
     $product->delete();
 
     return redirect()->back()->with('success', 'Produit supprimé avec succès');
@@ -205,8 +243,8 @@ public function downloadTemplate()
 
 public function details($id)
 {
-    $product = Product::findOrFail($id);
-    
+    $product = Product::where('company_id', auth()->user()->company_id)->findOrFail($id);
+
     $purchases = PurchaseItem::with('purchase.supplier')
         ->where('product_id', $id)
         ->latest()
