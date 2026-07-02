@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Facture;
 use Illuminate\Http\Request;
 use App\Models\Category;
-use App\Models\product;
+use App\Models\Product;
+use Illuminate\Validation\Rule;
 use App\Models\Customer;
+
+
 use App\Models\Purchase;
 use App\Models\Supplier;
 
@@ -26,40 +29,36 @@ class FactureController extends Controller
    
     public function index(Request $request)
     {
+        $companyId = auth()->user()->company_id;
+    
         $search = strtolower($request->search ?? '');
         $status = $request->status ?? '';
         $dateFrom = $request->date_from;
         $dateTo = $request->date_to;
-
-        $factures = Facture::query()
-        ->where('status', '!=', 'annulée')
-        ->when($search, function ($query) use ($search) {           
-             $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(code_facture) LIKE ?', ["%{$search}%"])
-                  ->orWhereRaw('LOWER(client_name) LIKE ?', ["%{$search}%"])
-                  ->orWhereRaw('LOWER(status) LIKE ?', ["%{$search}%"]);
-            });
-        })
-        ->when($status, function ($query) use ($status) {
-            $query->where('status', $status);
-        })
-        ->when($dateFrom, function ($query) use ($dateFrom) {
-            $query->whereDate('date_facture', '>=', $dateFrom);
-        })
-        ->when($dateTo, function ($query) use ($dateTo) {
-            $query->whereDate('date_facture', '<=', $dateTo);
-        })
-        ->latest()
-        ->paginate(15)
-        ->appends($request->all());
-
     
-        // stats
-        $totalFactures = Facture::where('status', '!=', 'annulée')->count();
-        $totalAmount = Facture::where('status', '!=', 'annulée')->sum('total');
-        $totalPaid = Facture::where('status', '!=', 'annulée')->sum('paid_amount');
-        $totalRemaining = Facture::where('status', '!=', 'annulée')->sum('remaining_amount');
-            
+        $baseQuery = Facture::where('company_id', $companyId)
+            ->where('status', '!=', 'annulée');
+    
+        $factures = (clone $baseQuery)
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw('LOWER(code_facture) LIKE ?', ["%{$search}%"])
+                      ->orWhereRaw('LOWER(client_name) LIKE ?', ["%{$search}%"])
+                      ->orWhereRaw('LOWER(status) LIKE ?', ["%{$search}%"]);
+                });
+            })
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($dateFrom, fn ($query) => $query->whereDate('date_facture', '>=', $dateFrom))
+            ->when($dateTo, fn ($query) => $query->whereDate('date_facture', '<=', $dateTo))
+            ->latest()
+            ->paginate(15)
+            ->appends($request->all());
+    
+        $totalFactures = (clone $baseQuery)->count();
+        $totalAmount = (clone $baseQuery)->sum('total');
+        $totalPaid = (clone $baseQuery)->sum('paid_amount');
+        $totalRemaining = (clone $baseQuery)->sum('remaining_amount');
+    
         return view('archife', compact(
             'factures',
             'search',
@@ -71,13 +70,20 @@ class FactureController extends Controller
             'totalPaid',
             'totalRemaining'
         ));
-    }
+    }  
+    
     public function store(Request $request)
 {
+    $companyId = auth()->user()->company_id;
 
 
     $request->validate([
-        'invoice_number' => 'nullable|string|max:255|unique:factures,code_facture',
+        'invoice_number' => [
+            'nullable',
+            'string',
+            'max:255',
+            Rule::unique('factures', 'code_facture')->where(fn ($q) => $q->where('company_id', $companyId)),
+        ],        
         'invoice_date' => 'required|date',
         'customer_search' => 'required|string|max:255',
         'due_date' => 'nullable|date',
@@ -134,6 +140,7 @@ class FactureController extends Controller
         }
         
         $facture = Facture::create([
+            'company_id' => $companyId,
             'code_facture' => $invoiceNumber,
             'client_name' => $request->customer_search,
             'total' => $total,
@@ -181,7 +188,8 @@ class FactureController extends Controller
                 continue;
             }
 
-            $product = Product::where('Referonce', $item['referonce'])->first();
+            $product = Product::where('company_id', $companyId)
+            ->where('Referonce', $item['referonce'])->first();
 
             if (!$product) {
                 throw new \Exception('Produit introuvable');
@@ -204,13 +212,14 @@ class FactureController extends Controller
             $product->decrement('Quantite', $quantity);
 
 
-StockMovement::create([
-    'product_id' => $product->id,
-    'type' => 'sortie',
-    'quantity' => $quantity,
-    'source' => 'facture',
-    'reference' => $invoiceNumber,
-]);
+            StockMovement::create([
+                'company_id' => $companyId,
+                'product_id' => $product->id,
+                'type' => 'sortie',
+                'quantity' => $quantity,
+                'source' => 'facture',
+                'reference' => $invoiceNumber,
+            ]);
         }
 
         DB::commit();
@@ -227,16 +236,24 @@ StockMovement::create([
 }
 
 
-    public function show($id)
+public function show($id)
 {
+    $companyId = auth()->user()->company_id;
+
     $facture = Facture::withTrashed()
-    ->with(['items', 'payments'])
-    ->findOrFail($id);
+        ->with(['items', 'payments'])
+        ->where('company_id', $companyId)
+        ->findOrFail($id);
 
-$customer = Customer::where('name', $facture->client_name)->first();
-$company = CompanySetting::first();
+    $customer = Customer::where('company_id', $companyId)
+        ->where('name', $facture->client_name)
+        ->first();
 
-return view('facture_show', compact('facture', 'customer', 'company'));}
+    $company = CompanySetting::first();
+
+    return view('facture_show', compact('facture', 'customer', 'company'));
+}
+
 public function dashboard()
 {
     $SuppliersCount = Supplier::count();
@@ -379,27 +396,24 @@ public function exportExcel(Request $request)
 
 public function exportPdf(Request $request)
 {
+    $companyId = auth()->user()->company_id;
+
     $search = strtolower($request->search ?? '');
     $status = $request->status ?? '';
     $dateFrom = $request->date_from ?? '';
     $dateTo = $request->date_to ?? '';
 
-    $factures = Facture::when($search, function ($query) use ($search) {
+    $factures = Facture::where('company_id', $companyId)
+        ->when($search, function ($query) use ($search) {
             $query->where(function ($q) use ($search) {
                 $q->whereRaw('LOWER(code_facture) LIKE ?', ["%{$search}%"])
                   ->orWhereRaw('LOWER(client_name) LIKE ?', ["%{$search}%"])
                   ->orWhereRaw('LOWER(status) LIKE ?', ["%{$search}%"]);
             });
         })
-        ->when($status, function ($query) use ($status) {
-            $query->where('status', $status);
-        })
-        ->when($dateFrom, function ($query) use ($dateFrom) {
-            $query->whereDate('date_facture', '>=', $dateFrom);
-        })
-        ->when($dateTo, function ($query) use ($dateTo) {
-            $query->whereDate('date_facture', '<=', $dateTo);
-        })
+        ->when($status, fn ($query) => $query->where('status', $status))
+        ->when($dateFrom, fn ($query) => $query->whereDate('date_facture', '>=', $dateFrom))
+        ->when($dateTo, fn ($query) => $query->whereDate('date_facture', '<=', $dateTo))
         ->latest()
         ->get();
 
@@ -414,33 +428,38 @@ public function exportPdf(Request $request)
     return $pdf->download('archive_factures.pdf');
 }
 
+
 ///annull factura 
 
 public function cancel($id)
-
 {
-
     if (auth()->user()->role !== 'admin') {
         return back()->with('error', 'Accès refusé.');
     }
+
+    $companyId = auth()->user()->company_id;
+
     DB::beginTransaction();
 
     try {
-        $facture = Facture::with('items')->findOrFail($id);
+        $facture = Facture::with('items')
+            ->where('company_id', $companyId)
+            ->findOrFail($id);
 
-        // إلا كانت ديجا annulée
         if ($facture->status === 'annulée') {
             return redirect()->back()->with('error', 'Cette facture est déjà annulée.');
         }
 
-        // رجّع stock
         foreach ($facture->items as $item) {
-            $product = Product::where('Referonce', $item->referonce)->first();
+            $product = Product::where('company_id', $companyId)
+                ->where('Referonce', $item->referonce)
+                ->first();
 
             if ($product) {
                 $product->increment('Quantite', $item->quantity);
 
                 StockMovement::create([
+                    'company_id' => $companyId,
                     'product_id' => $product->id,
                     'type' => 'entree',
                     'quantity' => $item->quantity,
@@ -450,7 +469,6 @@ public function cancel($id)
             }
         }
 
-        // حدّث الفاتورة
         $facture->status = 'annulée';
         $facture->paid_amount = 0;
         $facture->remaining_amount = 0;
@@ -465,26 +483,38 @@ public function cancel($id)
         return redirect()->back()->with('error', $e->getMessage());
     }
 }
-
-
 public function destroy($id)
 {
     if (auth()->user()->role !== 'admin') {
         return back()->with('error', 'Accès refusé.');
     }
 
+    $companyId = auth()->user()->company_id;
+
     DB::beginTransaction();
 
     try {
-        $facture = Facture::with('items')->findOrFail($id);
+        $facture = Facture::with('items')
+            ->where('company_id', $companyId)
+            ->findOrFail($id);
 
-        // إذا facture ما كانتش annulée، خاص stock يرجع قبل الحذف
         if ($facture->status !== 'annulée') {
             foreach ($facture->items as $item) {
-                $product = Product::where('Referonce', $item->referonce)->first();
+                $product = Product::where('company_id', $companyId)
+                    ->where('Referonce', $item->referonce)
+                    ->first();
 
                 if ($product) {
                     $product->increment('Quantite', $item->quantity);
+
+                    StockMovement::create([
+                        'company_id' => $companyId,
+                        'product_id' => $product->id,
+                        'type' => 'entree',
+                        'quantity' => $item->quantity,
+                        'source' => 'suppression facture',
+                        'reference' => $facture->code_facture,
+                    ]);
                 }
             }
 
@@ -503,16 +533,24 @@ public function destroy($id)
         return back()->with('error', 'Erreur: ' . $e->getMessage());
     }
 }
-
 public function edit($id)
 {
-    $facture = Facture::with(['items', 'payments'])->findOrFail($id);
-    $products = Product::all();
-    $customers = Customer::all(['id', 'name', 'address']);
+    $companyId = auth()->user()->company_id;
+
+    $facture = Facture::with(['items', 'payments'])
+        ->where('company_id', $companyId)
+        ->findOrFail($id);
+
+    $products = Product::where('company_id', $companyId)->get();
+
+    $customers = Customer::where('company_id', $companyId)
+        ->get(['id', 'name', 'address']);
 
     foreach ($facture->items as $item) {
-        $product = Product::where('Referonce', $item->referonce)->first();
-    
+        $product = Product::where('company_id', $companyId)
+            ->where('Referonce', $item->referonce)
+            ->first();
+
         $item->current_stock = $product ? $product->Quantite : 0;
     }
 
@@ -522,16 +560,22 @@ public function edit($id)
 
     return view('edit_facture', compact('facture', 'products', 'customers'));
 }
-
 public function update(Request $request, $id)
 {
-    $request->validate([
+    $companyId = auth()->user()->company_id;
+
+    $facture = Facture::with(['items', 'payments'])
+    ->where('company_id', $companyId)
+
+    ->findOrFail($id);    $request->validate([
         'invoice_date' => 'required|date',
         'customer_search' => 'required|string|max:255',
         'items' => 'required|array|min:1',
     ]);
 
-    $facture = Facture::with(['items', 'payments'])->findOrFail($id);
+    $facture = Facture::with(['items', 'payments'])
+    ->where('company_id', $companyId)
+    ->findOrFail($id);
 
     if ($facture->status === 'annulée') {
         return redirect()->back()->with('error', 'Impossible de modifier une facture annulée.');
@@ -562,7 +606,8 @@ public function update(Request $request, $id)
     try {
         // رجع stock القديم
         foreach ($facture->items as $oldItem) {
-            $oldProduct = Product::where('Referonce', $oldItem->referonce)->first();
+            $oldProduct = Product::where('company_id', $companyId)
+            ->where('Referonce', $oldItem->referonce)->first();
             if ($oldProduct) {
                 $oldProduct->increment('Quantite', $oldItem->quantity);
             }
@@ -604,7 +649,8 @@ public function update(Request $request, $id)
                 continue;
             }
 
-            $product = Product::where('Referonce', $item['referonce'])->first();
+            $product = Product::where('company_id', $companyId)
+            ->where('Referonce', $item['referonce'])->first();
 
             if (!$product) {
                 throw new \Exception('Produit introuvable');

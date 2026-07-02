@@ -22,6 +22,7 @@ class Facture extends Model
         'paid_amount',
         'remaining_amount',
     ];
+   
 
     public function items()
     {

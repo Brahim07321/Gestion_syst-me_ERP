@@ -21,14 +21,17 @@ class FactureWorkflowTest extends TestCase
     public function test_create_facture_decreases_stock(): void
     {
         $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
         $categoryId = DB::table('categories')->insertGetId([
+            'company_id' => $companyId,
             'Category' => 'Catégorie Test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $productId = DB::table('products')->insertGetId([
+            'company_id' => $companyId,
             'Category_ID' => $categoryId,
             'code' => 'P-FAC-001',
             'Referonce' => 'REF-FAC-WF-001',
@@ -96,14 +99,17 @@ class FactureWorkflowTest extends TestCase
     public function test_create_facture_fails_when_stock_is_insufficient(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $productId = DB::table('products')->insertGetId([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-STOCK-001',
         'Referonce' => 'REF-STOCK-001',
@@ -154,14 +160,17 @@ class FactureWorkflowTest extends TestCase
 public function test_cancel_facture_restores_stock_and_marks_as_cancelled(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Cancel Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $productId = DB::table('products')->insertGetId([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-CAN-FAC-001',
         'Referonce' => 'REF-CAN-FAC-001',
@@ -174,6 +183,7 @@ public function test_cancel_facture_restores_stock_and_marks_as_cancelled(): voi
     ]);
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-CANCEL-001',
         'client_name' => 'Client Cancel Test',
         'total' => 750,
@@ -224,8 +234,10 @@ public function test_cancel_facture_restores_stock_and_marks_as_cancelled(): voi
 }public function test_deleted_cancelled_facture_appears_in_documents_archives(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-ARCHIVE-001',
         'client_name' => 'Client Archive Test',
         'total' => 750,
@@ -259,14 +271,17 @@ public function test_cancel_facture_restores_stock_and_marks_as_cancelled(): voi
 public function test_restore_cancelled_deleted_facture_decreases_stock_and_reactivates_facture(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $productId = DB::table('products')->insertGetId([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-REST-FAC-001',
         'Referonce' => 'REF-REST-FAC-001',
@@ -279,6 +294,7 @@ public function test_restore_cancelled_deleted_facture_decreases_stock_and_react
     ]);
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-RESTORE-001',
         'client_name' => 'Client Restore Test',
         'total' => 750,
@@ -335,14 +351,17 @@ public function test_restore_cancelled_deleted_facture_decreases_stock_and_react
 public function test_create_facture_with_partial_payment_marks_as_partially_paid(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Paiement Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     DB::table('products')->insert([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-PAY-001',
         'Referonce' => 'REF-PAY-001',
@@ -388,14 +407,18 @@ public function test_create_facture_with_partial_payment_marks_as_partially_paid
 public function test_create_facture_with_full_payment_marks_as_paid(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Paiement Total Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     DB::table('products')->insert([
+        'company_id' => $companyId,
+
         'Category_ID' => $categoryId,
         'code' => 'P-FULL-PAY-001',
         'Referonce' => 'REF-FULL-PAY-001',
@@ -441,14 +464,17 @@ public function test_create_facture_with_full_payment_marks_as_paid(): void
 public function test_create_facture_without_payment_marks_as_unpaid(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Sans Paiement Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     DB::table('products')->insert([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-NO-PAY-001',
         'Referonce' => 'REF-NO-PAY-001',
@@ -493,14 +519,17 @@ public function test_create_facture_without_payment_marks_as_unpaid(): void
 public function test_facture_edit_page_opens(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Edit Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     DB::table('products')->insert([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-EDIT-001',
         'Referonce' => 'REF-EDIT-001',
@@ -513,6 +542,7 @@ public function test_facture_edit_page_opens(): void
     ]);
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-EDIT-001',
         'client_name' => 'Client Edit Test',
         'total' => 300,
@@ -549,14 +579,17 @@ $response->assertSee('REF-EDIT-001');
 public function test_update_facture_changes_quantity_and_recalculates_stock(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Update Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $productId = DB::table('products')->insertGetId([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-UPD-FAC-001',
         'Referonce' => 'REF-UPD-FAC-001',
@@ -570,6 +603,7 @@ public function test_update_facture_changes_quantity_and_recalculates_stock(): v
     ]);
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-UPD-001',
         'client_name' => 'Client Update Test',
         'total' => 300,
@@ -636,14 +670,17 @@ public function test_update_facture_changes_quantity_and_recalculates_stock(): v
 public function test_update_facture_rejects_paid_amount_greater_than_total(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Update Paid Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $productId = DB::table('products')->insertGetId([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-UPD-PAID-001',
         'Referonce' => 'REF-UPD-PAID-001',
@@ -656,6 +693,7 @@ public function test_update_facture_rejects_paid_amount_greater_than_total(): vo
     ]);
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-UPD-PAID-001',
         'client_name' => 'Client Update Paid Test',
         'total' => 300,
@@ -715,14 +753,17 @@ public function test_update_facture_rejects_paid_amount_greater_than_total(): vo
 public function test_update_cancelled_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $categoryId = DB::table('categories')->insertGetId([
+        'company_id' => $companyId,
         'Category' => 'Catégorie Cancelled Update Test',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     $productId = DB::table('products')->insertGetId([
+        'company_id' => $companyId,
         'Category_ID' => $categoryId,
         'code' => 'P-UPD-CANCEL-001',
         'Referonce' => 'REF-UPD-CANCEL-001',
@@ -735,6 +776,7 @@ public function test_update_cancelled_facture_is_rejected(): void
     ]);
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-UPD-CANCEL-001',
         'client_name' => 'Client Cancelled Update Test',
         'total' => 300,
@@ -803,8 +845,10 @@ public function test_update_cancelled_facture_is_rejected(): void
 public function test_edit_cancelled_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-EDIT-CANCEL-001',
         'client_name' => 'Client Edit Cancelled Test',
         'total' => 300,
@@ -831,8 +875,10 @@ public function test_edit_cancelled_facture_is_rejected(): void
 public function test_add_payment_updates_facture_to_partially_paid(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-PAYMENT-001',
         'client_name' => 'Client Payment Test',
         'total' => 300,
@@ -870,8 +916,10 @@ public function test_add_payment_updates_facture_to_partially_paid(): void
 public function test_add_full_payment_updates_facture_to_paid(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-FULL-PAYMENT-001',
         'client_name' => 'Client Full Payment Test',
         'total' => 300,
@@ -910,8 +958,10 @@ public function test_add_full_payment_updates_facture_to_paid(): void
 public function test_add_payment_greater_than_remaining_amount_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-PAY-OVER-001',
         'client_name' => 'Client Payment Over Test',
         'total' => 300,
@@ -949,8 +999,10 @@ public function test_add_payment_greater_than_remaining_amount_is_rejected(): vo
 public function test_add_payment_to_paid_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-ALREADY-PAID-001',
         'client_name' => 'Client Already Paid Test',
         'total' => 300,
@@ -989,8 +1041,10 @@ public function test_add_payment_to_paid_facture_is_rejected(): void
 public function test_add_payment_to_cancelled_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-CANCELLED-PAYMENT-001',
         'client_name' => 'Client Cancelled Payment Test',
         'total' => 300,
@@ -1029,8 +1083,10 @@ public function test_add_payment_to_cancelled_facture_is_rejected(): void
 public function test_add_payment_to_deleted_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-DELETED-PAYMENT-001',
         'client_name' => 'Client Deleted Payment Test',
         'total' => 300,
@@ -1074,8 +1130,10 @@ public function test_add_payment_to_deleted_facture_is_rejected(): void
 public function test_delete_payment_recalculates_facture_to_unpaid(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-DELETE-PAYMENT-001',
         'client_name' => 'Client Delete Payment Test',
         'total' => 300,
@@ -1116,8 +1174,10 @@ public function test_delete_payment_recalculates_facture_to_unpaid(): void
 public function test_update_payment_recalculates_facture_to_paid(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-UPDATE-PAYMENT-001',
         'client_name' => 'Client Update Payment Test',
         'total' => 300,
@@ -1166,8 +1226,10 @@ public function test_update_payment_recalculates_facture_to_paid(): void
 public function test_update_payment_greater_than_facture_total_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-UPDATE-PAYMENT-OVER-001',
         'client_name' => 'Client Update Payment Over Test',
         'total' => 300,
@@ -1216,8 +1278,10 @@ public function test_update_payment_greater_than_facture_total_is_rejected(): vo
 public function test_update_payment_on_cancelled_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-CANCELLED-UPDATE-PAYMENT-001',
         'client_name' => 'Client Cancelled Update Payment Test',
         'total' => 300,
@@ -1266,8 +1330,10 @@ public function test_update_payment_on_cancelled_facture_is_rejected(): void
 public function test_delete_payment_on_cancelled_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-CANCELLED-DELETE-PAYMENT-001',
         'client_name' => 'Client Cancelled Delete Payment Test',
         'total' => 300,
@@ -1304,8 +1370,10 @@ public function test_delete_payment_on_cancelled_facture_is_rejected(): void
 public function test_update_payment_on_deleted_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-DELETED-UPDATE-PAYMENT-001',
         'client_name' => 'Client Deleted Update Payment Test',
         'total' => 300,
@@ -1351,8 +1419,10 @@ public function test_update_payment_on_deleted_facture_is_rejected(): void
 public function test_delete_payment_on_deleted_facture_is_rejected(): void
 {
     $admin = $this->adminUser();
+        $companyId = $admin->company_id;
 
     $factureId = DB::table('factures')->insertGetId([
+        'company_id' => $companyId,
         'code_facture' => 'FAC-DELETED-DELETE-PAYMENT-001',
         'client_name' => 'Client Deleted Delete Payment Test',
         'total' => 300,
